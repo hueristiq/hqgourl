@@ -7,7 +7,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	tests := []struct {
+	tests := []struct { //nolint:govet // To be refactored.
 		name   string
 		input  string
 		output *hqgourl.URL
@@ -38,7 +38,13 @@ func TestParse(t *testing.T) {
 				t.Errorf("Parse(%q) returned error %v", tt.input, err)
 			}
 
-			if got.Domain != tt.output.Domain || got.ETLDPlusOne != tt.output.ETLDPlusOne || got.Subdomain != tt.output.Subdomain || got.RootDomain != tt.output.RootDomain || got.TLD != tt.output.TLD || got.Port != tt.output.Port || got.Extension != tt.output.Extension {
+			if got.Domain != tt.output.Domain ||
+				got.ETLDPlusOne != tt.output.ETLDPlusOne ||
+				got.Subdomain != tt.output.Subdomain ||
+				got.RootDomain != tt.output.RootDomain ||
+				got.TLD != tt.output.TLD ||
+				got.Port != tt.output.Port ||
+				got.Extension != tt.output.Extension {
 				t.Errorf("Parse(%q) = %v, want %v", tt.input, got, tt.output)
 			}
 		})
@@ -89,6 +95,7 @@ func TestAddDefaultScheme(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			got := hqgourl.AddDefaultScheme(tt.url, tt.scheme)
+
 			if got != tt.output {
 				t.Errorf("AddDefaultScheme(%q, %q) = %v, want %v", tt.url, tt.scheme, got, tt.output)
 			}
@@ -134,8 +141,9 @@ func TestSplitHost(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			domain, port := hqgourl.SplitHost(tt.host)
+
 			if domain != tt.domain || port != tt.port {
-				t.Errorf("splitHost(%q) = %v, %v, want %v, %v", tt.host, domain, port, tt.domain, tt.port)
+				t.Errorf("SplitHost(%q) = %v, %v, want %v, %v", tt.host, domain, port, tt.domain, tt.port)
 			}
 		})
 	}

@@ -63,7 +63,6 @@ func Parse(rawURL string) (parsedURL *URL, err error) {
 		return
 	}
 
-	// Host = Domain + Port
 	parsedURL.Domain, parsedURL.Port = SplitHost(parsedURL.URL.Host)
 
 	// ETLDPlusOne
@@ -104,8 +103,8 @@ func AddDefaultScheme(rawURL, scheme string) string {
 	}
 }
 
-// splitHost splits the host into domain and port.
-func SplitHost(host string) (domain string, port string) {
+// SplitHost splits the host into domain and port.
+func SplitHost(host string) (domain, port string) {
 	for i := len(host) - 1; i >= 0; i-- {
 		if host[i] == ':' {
 			return host[:i], host[i+1:]
@@ -113,5 +112,6 @@ func SplitHost(host string) (domain string, port string) {
 			domain = host
 		}
 	}
+
 	return
 }
