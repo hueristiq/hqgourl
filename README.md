@@ -19,4 +19,4 @@ go get -v -u github.com/hueristiq/hqgourl
 
 ## Licensing
 
-This tool is distributed under the [MIT license](https://github.com/hueristiq/hqgourl/blob/master/LICENSE).
+This package is distributed under the [MIT license](https://github.com/hueristiq/hqgourl/blob/master/LICENSE).
