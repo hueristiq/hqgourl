@@ -1,22 +1,20 @@
-package hqgourl_test
+package hqgourl
 
 import (
 	"testing"
-
-	"github.com/hueristiq/hqgourl"
 )
 
 func TestParse(t *testing.T) {
 	tests := []struct { //nolint:govet // To be refactored.
 		name   string
 		input  string
-		output *hqgourl.URL
+		output *URL
 		err    error
 	}{
 		{
 			name:  "Test example URL",
 			input: "https://sub.example.com:8080/path/to/file.txt",
-			output: &hqgourl.URL{
+			output: &URL{
 				Domain:      "sub.example.com",
 				ETLDPlusOne: "example.com",
 				Subdomain:   "sub",
@@ -33,7 +31,7 @@ func TestParse(t *testing.T) {
 		tt := tests[index]
 
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := hqgourl.Parse(tt.input)
+			got, err := Parse(tt.input)
 			if err != nil {
 				t.Errorf("Parse(%q) returned error %v", tt.input, err)
 			}
@@ -94,7 +92,7 @@ func TestAddDefaultScheme(t *testing.T) {
 		tt := tests[index]
 
 		t.Run(tt.name, func(t *testing.T) {
-			got := hqgourl.AddDefaultScheme(tt.url, tt.scheme)
+			got := AddDefaultScheme(tt.url, tt.scheme)
 
 			if got != tt.output {
 				t.Errorf("AddDefaultScheme(%q, %q) = %v, want %v", tt.url, tt.scheme, got, tt.output)
@@ -140,7 +138,7 @@ func TestSplitHost(t *testing.T) {
 		tt := tests[index]
 
 		t.Run(tt.name, func(t *testing.T) {
-			domain, port := hqgourl.SplitHost(tt.host)
+			domain, port := SplitHost(tt.host)
 
 			if domain != tt.domain || port != tt.port {
 				t.Errorf("SplitHost(%q) = %v, %v, want %v, %v", tt.host, domain, port, tt.domain, tt.port)
