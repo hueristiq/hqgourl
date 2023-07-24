@@ -1,12 +1,8 @@
-// Copyright (c) 2015, Daniel Martí <mvdan@mvdan.cc>
-// See LICENSE for licensing information
-
 package hqgourl
 
 import (
 	"fmt"
 	"regexp"
-	"sync"
 	"testing"
 )
 
@@ -198,9 +194,9 @@ var constantTestCases = []testCase{
 }
 
 func TestRegexes(t *testing.T) {
-	doTest(t, "Relaxed", Relaxed(), constantTestCases)
-	doTest(t, "Strict", Strict(), constantTestCases)
-	doTest(t, "Relaxed2", Relaxed(), []testCase{
+	doTest(t, "Relaxed", RelaxedExtractor(), constantTestCases)
+	doTest(t, "Strict", StrictExtractor(), constantTestCases)
+	doTest(t, "Relaxed2", RelaxedExtractor(), []testCase{
 		{`foo.a`, nil},
 		{`foo.com`, true},
 		{`foo.com bar.com`, `foo.com`},
@@ -343,7 +339,7 @@ func TestRegexes(t *testing.T) {
 		{`foo+test@bar.com`, true},
 		{`foo+._%-@bar.com`, true},
 	})
-	doTest(t, "Strict2", Strict(), []testCase{
+	doTest(t, "Strict2", StrictExtractor(), []testCase{
 		{`http:// foo.com`, nil},
 		{`foo.a`, nil},
 		{`foo.com`, nil},
@@ -360,50 +356,50 @@ func TestRegexes(t *testing.T) {
 	})
 }
 
-func TestStrictMatchingSchemeError(t *testing.T) {
-	for _, c := range []struct {
-		exp     string
-		wantErr bool
-	}{
-		{`http://`, false},
-		{`https?://`, false},
-		{`http://|mailto:`, false},
-		{`http://(`, true},
-	} {
-		_, err := StrictMatchingScheme(c.exp)
-		if c.wantErr && err == nil {
-			t.Errorf(`StrictMatchingScheme("%s") did not error as expected`, c.exp)
-		} else if !c.wantErr && err != nil {
-			t.Errorf(`StrictMatchingScheme("%s") unexpectedly errored`, c.exp)
-		}
-	}
-}
+// func TestStrictMatchingSchemeError(t *testing.T) {
+// 	for _, c := range []struct {
+// 		exp     string
+// 		wantErr bool
+// 	}{
+// 		{`http://`, false},
+// 		{`https?://`, false},
+// 		{`http://|mailto:`, false},
+// 		{`http://(`, true},
+// 	} {
+// 		_, err := StrictMatchingScheme(c.exp)
+// 		if c.wantErr && err == nil {
+// 			t.Errorf(`StrictMatchingScheme("%s") did not error as expected`, c.exp)
+// 		} else if !c.wantErr && err != nil {
+// 			t.Errorf(`StrictMatchingScheme("%s") unexpectedly errored`, c.exp)
+// 		}
+// 	}
+// }
 
-func TestStrictMatchingScheme(t *testing.T) {
-	strictMatching, _ := StrictMatchingScheme("http://|ftps?://|mailto:")
-	doTest(t, "StrictMatchingScheme", strictMatching, []testCase{
-		{`foo.com`, nil},
-		{`foo@bar.com`, nil},
-		{`http://foo`, true},
-		{`Http://foo`, true},
-		{`https://foo`, nil},
-		{`ftp://foo`, true},
-		{`ftps://foo`, true},
-		{`mailto:foo`, true},
-		{`MAILTO:foo`, true},
-		{`sms:123`, nil},
-	})
-}
+// func TestStrictMatchingScheme(t *testing.T) {
+// 	strictMatching, _ := StrictMatchingScheme("http://|ftps?://|mailto:")
+// 	doTest(t, "StrictMatchingScheme", strictMatching, []testCase{
+// 		{`foo.com`, nil},
+// 		{`foo@bar.com`, nil},
+// 		{`http://foo`, true},
+// 		{`Http://foo`, true},
+// 		{`https://foo`, nil},
+// 		{`ftp://foo`, true},
+// 		{`ftps://foo`, true},
+// 		{`mailto:foo`, true},
+// 		{`MAILTO:foo`, true},
+// 		{`sms:123`, nil},
+// 	})
+// }
 
-func TestStrictMatchingSchemeAny(t *testing.T) {
-	strictMatching, _ := StrictMatchingScheme(AnyScheme)
-	doTest(t, "StrictMatchingScheme", strictMatching, []testCase{
-		{`http://foo`, true},
-		{`git+https://foo`, true},
-		{`randomtexthttp://foo.bar/etc`, true},
-		{`mailto:foo`, true},
-	})
-}
+// func TestStrictMatchingSchemeAny(t *testing.T) {
+// 	strictMatching, _ := StrictMatchingScheme(AnyScheme)
+// 	doTest(t, "StrictMatchingScheme", strictMatching, []testCase{
+// 		{`http://foo`, true},
+// 		{`git+https://foo`, true},
+// 		{`randomtexthttp://foo.bar/etc`, true},
+// 		{`mailto:foo`, true},
+// 	})
+// }
 
 func bench(b *testing.B, re func() *regexp.Regexp, str string) {
 	b.ReportAllocs()
@@ -430,42 +426,42 @@ xmpp:foo@bar.com
 `
 
 func BenchmarkStrict_none(b *testing.B) {
-	bench(b, Strict, inputNone)
+	bench(b, StrictExtractor, inputNone)
 }
 
 func BenchmarkStrict_many(b *testing.B) {
-	bench(b, Strict, inputMany)
+	bench(b, StrictExtractor, inputMany)
 }
 
 func BenchmarkRelaxed_none(b *testing.B) {
-	bench(b, Relaxed, inputNone)
+	bench(b, RelaxedExtractor, inputNone)
 }
 
 func BenchmarkRelaxed_many(b *testing.B) {
-	bench(b, Relaxed, inputMany)
+	bench(b, RelaxedExtractor, inputMany)
 }
 
-var (
-	rxMatchingScheme     *regexp.Regexp
-	rxMatchingSchemeOnce sync.Once
-)
+// var (
+// 	rxMatchingScheme     *regexp.Regexp
+// 	rxMatchingSchemeOnce sync.Once
+// )
 
-func matchingScheme() *regexp.Regexp {
-	rxMatchingSchemeOnce.Do(func() {
-		rx, err := StrictMatchingScheme("https?://")
-		if err != nil {
-			panic(err)
-		}
-		rxMatchingScheme = rx
-	})
+// func matchingScheme() *regexp.Regexp {
+// 	rxMatchingSchemeOnce.Do(func() {
+// 		rx, err := StrictMatchingScheme("https?://")
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 		rxMatchingScheme = rx
+// 	})
 
-	return rxMatchingScheme
-}
+// 	return rxMatchingScheme
+// }
 
-func BenchmarkStrictMatchingScheme_none(b *testing.B) {
-	bench(b, matchingScheme, inputNone)
-}
+// func BenchmarkStrictMatchingScheme_none(b *testing.B) {
+// 	bench(b, matchingScheme, inputNone)
+// }
 
-func BenchmarkStrictMatchingScheme_many(b *testing.B) {
-	bench(b, matchingScheme, inputMany)
-}
+// func BenchmarkStrictMatchingScheme_many(b *testing.B) {
+// 	bench(b, matchingScheme, inputMany)
+// }

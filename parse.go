@@ -94,9 +94,9 @@ func AddDefaultScheme(rawURL, scheme string) string {
 	switch {
 	case strings.HasPrefix(rawURL, "//"):
 		return scheme + ":" + rawURL
-	case strings.Contains(rawURL, "://") && !strings.HasPrefix(rawURL, "http"):
+	case strings.HasPrefix(rawURL, "://") && !strings.HasPrefix(rawURL, "http"):
 		return scheme + rawURL
-	case !strings.Contains(rawURL, "://"):
+	case !strings.Contains(rawURL, "//"):
 		return scheme + "://" + rawURL
 	default:
 		return rawURL

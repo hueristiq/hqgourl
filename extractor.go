@@ -12,11 +12,6 @@ import (
 )
 
 const (
-	// pathCont is based on https://www.rfc-editor.org/rfc/rfc3987#section-2.2
-	// but does not match separators anywhere or most punctuation in final position,
-	// to avoid creating asymmetries like
-	// `Did you know that **<a href="...">https://example.com/**</a> is reserved for documentation?`
-	// from `Did you know that **https://example.com/** is reserved for documentation?`.
 	unreservedChar      = `a-zA-Z0-9\-._~`
 	endUnreservedChar   = `a-zA-Z0-9\-_~`
 	midSubDelimChar     = `!$&'*+,;=`
@@ -30,8 +25,12 @@ const (
 	wellBrack           = `\[(?:[` + midIChar + `]|\[[` + midIChar + `]*\])*\]`
 	wellBrace           = `\{(?:[` + midIChar + `]|\{[` + midIChar + `]*\})*\}`
 	wellAll             = wellParen + `|` + wellBrack + `|` + wellBrace
-	pathCont            = `(?:[` + midIChar + `]*(?:` + wellAll + `|[` + endIChar + `]))+`
-
+	// pathCont is based on https://www.rfc-editor.org/rfc/rfc3987#section-2.2
+	// but does not match separators anywhere or most punctuation in final position,
+	// to avoid creating asymmetries like
+	// `Did you know that **<a href="...">https://example.com/**</a> is reserved for documentation?`
+	// from `Did you know that **https://example.com/** is reserved for documentation?`.
+	pathCont  = `(?:[` + midIChar + `]*(?:` + wellAll + `|[` + endIChar + `]))+`
 	letter    = `\p{L}`
 	mark      = `\p{M}`
 	number    = `\p{N}`
@@ -40,7 +39,6 @@ const (
 	subdomain = `(?:` + iri + `\.)+`
 	octet     = `(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])`
 	ipv4Addr  = octet + `\.` + octet + `\.` + octet + `\.` + octet
-
 	// ipv6Addr is based on https://datatracker.ietf.org/doc/html/rfc4291#section-2.2
 	// with a specific alternative for each valid count of leading 16-bit hexadecimal "chomps"
 	// that have not been replaced with a `::` elision.
@@ -76,37 +74,7 @@ const (
 
 // AnyScheme can be passed to StrictMatchingScheme to match any possibly valid
 // scheme, and not just the known ones.
-var AnyScheme = `(?:[a-zA-Z][a-zA-Z.\-+]*://|` + anyOf(SchemesNoAuthority...) + `:)`
-
-// SchemesNoAuthority is a sorted list of some well-known url schemes that are
-// followed by ":" instead of "://". The list includes both officially
-// registered and unofficial schemes.
-var SchemesNoAuthority = []string{
-	`bitcoin`, // Bitcoin
-	`cid`,     // Content-ID
-	`file`,    // Files
-	`magnet`,  // Torrent magnets
-	`mailto`,  // Mail
-	`mid`,     // Message-ID
-	`sms`,     // SMS
-	`tel`,     // Telephone
-	`xmpp`,    // XMPP
-}
-
-// SchemesUnofficial is a sorted list of some well-known url schemes which
-// aren't officially registered just yet. They tend to correspond to software.
-//
-// Mostly collected from https://en.wikipedia.org/wiki/List_of_URI_schemes#Unofficial_but_common_URI_schemes.
-var SchemesUnofficial = []string{
-	`gemini`,        // gemini
-	`jdbc`,          // Java database Connectivity
-	`moz-extension`, // Firefox extension
-	`postgres`,      // PostgreSQL (short form)
-	`postgresql`,    // PostgreSQL
-	`slack`,         // Slack
-	`zoommtg`,       // Zoom (desktop)
-	`zoomus`,        // Zoom (mobile)
-}
+var AnyScheme = `(?:[a-zA-Z][a-zA-Z.\-+]*://|` + anyOf(schemes.SchemesNoAuthority...) + `:)`
 
 // The regular expressions are compiled when the API is first called.
 // Any subsequent calls will use the same regular expression pointers.
@@ -115,12 +83,60 @@ var SchemesUnofficial = []string{
 // as Copy is now only useful if one copy calls Longest but not another,
 // and we always call Longest after compiling the regular expression.
 var (
-	strictRe   *regexp.Regexp
-	strictInit sync.Once
-
+	strictRe    *regexp.Regexp
+	strictInit  sync.Once
 	relaxedRe   *regexp.Regexp
 	relaxedInit sync.Once
+	allRe       *regexp.Regexp
+	allInit     sync.Once
 )
+
+// StrictExtractor produces a regexp that matches any URL with a scheme in either the
+// Schemes or SchemesNoAuthority lists.
+func StrictExtractor() *regexp.Regexp {
+	strictInit.Do(func() {
+		strictRe = regexp.MustCompile(strictExp())
+		strictRe.Longest()
+	})
+
+	return strictRe
+}
+
+// RelaxedExtractor produces a regexp that matches any URL matched by Strict, plus any
+// URL with no scheme or email address.
+func RelaxedExtractor() *regexp.Regexp {
+	relaxedInit.Do(func() {
+		relaxedRe = regexp.MustCompile(relaxedExp())
+		relaxedRe.Longest()
+	})
+
+	return relaxedRe
+}
+
+// AllExtractor produces a regexp that matches any URL or Path
+func AllExtractor() *regexp.Regexp {
+	allInit.Do(func() {
+		allRe = regexp.MustCompile(allExp())
+		allRe.Longest()
+	})
+
+	return allRe
+}
+
+// StrictMatchingScheme produces a regexp similar to Strict, but requiring that
+// the scheme match the given regular expression. See AnyScheme too.
+// func StrictMatchingScheme(exp string) (regex *regexp.Regexp, err error) {
+// 	pattern := `(?i)(?:` + exp + `)(?-i)` + pathCont
+
+// 	regex, err = regexp.Compile(pattern)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	regex.Longest()
+
+// 	return
+// }
 
 func anyOf(strs ...string) string {
 	var b strings.Builder
@@ -140,17 +156,17 @@ func anyOf(strs ...string) string {
 	return b.String()
 }
 
-func strictExp() string {
-	schemesPattern := `(?:(?i)(?:` + anyOf(schemes.Schemes...) + `|` + anyOf(SchemesUnofficial...) + `)://|` + anyOf(SchemesNoAuthority...) + `:)`
+func strictExp() (pattern string) {
+	pattern = `(?:(?i)(?:` + anyOf(schemes.Schemes...) + `|` + anyOf(schemes.SchemesUnofficial...) + `)://|` + anyOf(schemes.SchemesNoAuthority...) + `:)` + pathCont
 
-	return schemesPattern + pathCont
+	return
 }
 
-func relaxedExp() string {
+func relaxedExp() (pattern string) {
 	var asciiTLDs, unicodeTLDs []string
 
-	for i, tld := range tlds.TLDs {
-		if tld[0] >= utf8.RuneSelf {
+	for i, TLD := range tlds.TLDs {
+		if TLD[0] >= utf8.RuneSelf {
 			asciiTLDs = tlds.TLDs[:i:i]
 			unicodeTLDs = tlds.TLDs[i:]
 
@@ -166,46 +182,19 @@ func relaxedExp() string {
 	tldsPattern := `(?:(?i)` + punycode + `|` + anyOf(append(asciiTLDs, tlds.PseudoTLDs...)...) + `\b|` + anyOf(unicodeTLDs...) + `)`
 	domain := subdomain + tldsPattern
 
+	// Web URLs pattern.
 	hostName := `(?:` + domain + `|\[` + ipv6Addr + `\]|\b` + ipv4Addr + `\b)`
 	webURL := hostName + port + `(?:/` + pathCont + `|/)?`
+	// Emails pattern.
 	email := `[a-zA-Z0-9._%\-+]+@` + domain
 
-	return strictExp() + `|` + webURL + `|` + email + `|` + ipv6AddrMinusEmpty
+	pattern = strictExp() + `|` + webURL + `|` + email + `|` + ipv6AddrMinusEmpty
+
+	return
 }
 
-// Strict produces a regexp that matches any URL with a scheme in either the
-// Schemes or SchemesNoAuthority lists.
-func Strict() *regexp.Regexp {
-	strictInit.Do(func() {
-		strictRe = regexp.MustCompile(strictExp())
-		strictRe.Longest()
-	})
-
-	return strictRe
-}
-
-// Relaxed produces a regexp that matches any URL matched by Strict, plus any
-// URL with no scheme or email address.
-func Relaxed() *regexp.Regexp {
-	relaxedInit.Do(func() {
-		relaxedRe = regexp.MustCompile(relaxedExp())
-		relaxedRe.Longest()
-	})
-
-	return relaxedRe
-}
-
-// StrictMatchingScheme produces a regexp similar to Strict, but requiring that
-// the scheme match the given regular expression. See AnyScheme too.
-func StrictMatchingScheme(exp string) (regex *regexp.Regexp, err error) {
-	strictMatching := `(?i)(?:` + exp + `)(?-i)` + pathCont
-
-	regex, err = regexp.Compile(strictMatching)
-	if err != nil {
-		return
-	}
-
-	regex.Longest()
+func allExp() (pattern string) {
+	pattern = `(?:"|')(((?:[a-zA-Z]{1,10}://|//)[^"'/]{1,}\.[a-zA-Z]{2,}[^"']{0,})|((?:/|\.\./|\./)[^"'><,;| *()(%%$^/\\\[\]][^"'><,;|()]{1,})|([a-zA-Z0-9_\-/]{1,}/[a-zA-Z0-9_\-/]{1,}\.(?:[a-zA-Z]{1,4}|action)(?:[\?|#][^"|']{0,}|))|([a-zA-Z0-9_\-/]{1,}/[a-zA-Z0-9_\-/]{3,}(?:[\?|#][^"|']{0,}|))|([a-zA-Z0-9_\-]{1,}\.(?:php|asp|aspx|jsp|json|action|html|js|txt|xml)(?:[\?|#][^"|']{0,}|)))(?:"|')`
 
 	return
 }
