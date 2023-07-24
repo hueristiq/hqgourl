@@ -11,6 +11,94 @@ import (
 	"github.com/hueristiq/hqgourl/unicodes"
 )
 
+type URLsExtractor struct{}
+
+// Strict produces a regexp that matches any URL with a scheme in either the
+// Schemes or SchemesNoAuthority lists.
+func (e *URLsExtractor) Strict() *regexp.Regexp {
+	strictExtractorInit.Do(func() {
+		strictExtractorRegex = regexp.MustCompile(strictExp())
+		strictExtractorRegex.Longest()
+	})
+
+	return strictExtractorRegex
+}
+
+// StrictMatchScheme produces a regexp similar to Strict, but requiring that
+// the scheme match the given regular expression. See AnyScheme too.
+func (e *URLsExtractor) StrictMatchScheme(exp string) (regex *regexp.Regexp, err error) {
+	pattern := `(?i)(?:` + exp + `)(?-i)` + pathCont
+
+	regex, err = regexp.Compile(pattern)
+	if err != nil {
+		return
+	}
+
+	regex.Longest()
+
+	return
+}
+
+// StrictMatchHost produces a regexp similar to Strict, but requiring that
+// the scheme match the given regular expression. See AnyScheme too.
+func (e *URLsExtractor) StrictMatchHost(exp string) (regex *regexp.Regexp, err error) {
+	pattern := `(?:(?i)(?:` + anyOf(schemes.Schemes...) + `|` + anyOf(schemes.SchemesUnofficial...) + `)://|` + anyOf(schemes.SchemesNoAuthority...) + `:)` + exp + `(?:/` + pathCont + `|/)?`
+
+	regex, err = regexp.Compile(pattern)
+	if err != nil {
+		return
+	}
+
+	regex.Longest()
+
+	return
+}
+
+// Moderate produces a regexp that matches any URL matched by Strict, plus any
+// URL with no scheme or email address.
+func (e *URLsExtractor) Moderate() *regexp.Regexp {
+	moderateExtractorInit.Do(func() {
+		moderateExtractorRegex = regexp.MustCompile(moderateExp())
+		moderateExtractorRegex.Longest()
+	})
+
+	return moderateExtractorRegex
+}
+
+// ModerateMatchHost produces a regexp similar to Moderate, but requiring that
+// the scheme match the given regular expression. See AnyScheme too.
+func (e *URLsExtractor) ModerateMatchHost(exp string) (regex *regexp.Regexp, err error) {
+	pattern := `(?:(?i)(?:` + anyOf(schemes.Schemes...) + `|` + anyOf(schemes.SchemesUnofficial...) + `)://|` + anyOf(schemes.SchemesNoAuthority...) + `:)?` + exp + `(?:/` + pathCont + `|/)?`
+
+	regex, err = regexp.Compile(pattern)
+	if err != nil {
+		return
+	}
+
+	regex.Longest()
+
+	return
+}
+
+// Relaxed produces a regexp that matches any URL or Path
+func (e *URLsExtractor) Relaxed() *regexp.Regexp {
+	relaxedExtractorInit.Do(func() {
+		relaxedExtractorRegex = regexp.MustCompile(relaxedExp())
+		relaxedExtractorRegex.Longest()
+	})
+
+	return relaxedExtractorRegex
+}
+
+type IURLsExtractor interface {
+	Strict() (regex *regexp.Regexp)
+	StrictMatchScheme(exp string) (regex *regexp.Regexp, err error)
+	StrictMatchHost(exp string) (regex *regexp.Regexp, err error)
+	Moderate() (regex *regexp.Regexp)
+	ModerateMatchHost(exp string) (regex *regexp.Regexp, err error)
+	Relaxed() (regex *regexp.Regexp)
+}
+
 const (
 	unreservedChar      = `a-zA-Z0-9\-._~`
 	endUnreservedChar   = `a-zA-Z0-9\-_~`
@@ -83,60 +171,21 @@ var AnyScheme = `(?:[a-zA-Z][a-zA-Z.\-+]*://|` + anyOf(schemes.SchemesNoAuthorit
 // as Copy is now only useful if one copy calls Longest but not another,
 // and we always call Longest after compiling the regular expression.
 var (
-	strictRe    *regexp.Regexp
-	strictInit  sync.Once
-	relaxedRe   *regexp.Regexp
-	relaxedInit sync.Once
-	allRe       *regexp.Regexp
-	allInit     sync.Once
+	strictExtractorRegex   *regexp.Regexp
+	strictExtractorInit    sync.Once
+	moderateExtractorRegex *regexp.Regexp
+	moderateExtractorInit  sync.Once
+	relaxedExtractorRegex  *regexp.Regexp
+	relaxedExtractorInit   sync.Once
 )
 
-// StrictExtractor produces a regexp that matches any URL with a scheme in either the
-// Schemes or SchemesNoAuthority lists.
-func StrictExtractor() *regexp.Regexp {
-	strictInit.Do(func() {
-		strictRe = regexp.MustCompile(strictExp())
-		strictRe.Longest()
-	})
+var Extractor *URLsExtractor
 
-	return strictRe
+var _ IURLsExtractor = &URLsExtractor{}
+
+func init() {
+	Extractor = &URLsExtractor{}
 }
-
-// RelaxedExtractor produces a regexp that matches any URL matched by Strict, plus any
-// URL with no scheme or email address.
-func RelaxedExtractor() *regexp.Regexp {
-	relaxedInit.Do(func() {
-		relaxedRe = regexp.MustCompile(relaxedExp())
-		relaxedRe.Longest()
-	})
-
-	return relaxedRe
-}
-
-// AllExtractor produces a regexp that matches any URL or Path
-func AllExtractor() *regexp.Regexp {
-	allInit.Do(func() {
-		allRe = regexp.MustCompile(allExp())
-		allRe.Longest()
-	})
-
-	return allRe
-}
-
-// StrictMatchingScheme produces a regexp similar to Strict, but requiring that
-// the scheme match the given regular expression. See AnyScheme too.
-// func StrictMatchingScheme(exp string) (regex *regexp.Regexp, err error) {
-// 	pattern := `(?i)(?:` + exp + `)(?-i)` + pathCont
-
-// 	regex, err = regexp.Compile(pattern)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	regex.Longest()
-
-// 	return
-// }
 
 func anyOf(strs ...string) string {
 	var b strings.Builder
@@ -162,7 +211,7 @@ func strictExp() (pattern string) {
 	return
 }
 
-func relaxedExp() (pattern string) {
+func moderateExp() (pattern string) {
 	var asciiTLDs, unicodeTLDs []string
 
 	for i, TLD := range tlds.TLDs {
@@ -193,7 +242,7 @@ func relaxedExp() (pattern string) {
 	return
 }
 
-func allExp() (pattern string) {
+func relaxedExp() (pattern string) {
 	pattern = `(?:"|')(((?:[a-zA-Z]{1,10}://|//)[^"'/]{1,}\.[a-zA-Z]{2,}[^"']{0,})|((?:/|\.\./|\./)[^"'><,;| *()(%%$^/\\\[\]][^"'><,;|()]{1,})|([a-zA-Z0-9_\-/]{1,}/[a-zA-Z0-9_\-/]{1,}\.(?:[a-zA-Z]{1,4}|action)(?:[\?|#][^"|']{0,}|))|([a-zA-Z0-9_\-/]{1,}/[a-zA-Z0-9_\-/]{3,}(?:[\?|#][^"|']{0,}|))|([a-zA-Z0-9_\-]{1,}\.(?:php|asp|aspx|jsp|json|action|html|js|txt|xml)(?:[\?|#][^"|']{0,}|)))(?:"|')`
 
 	return
