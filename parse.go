@@ -105,13 +105,9 @@ func AddDefaultScheme(rawURL, scheme string) string {
 
 // SplitHost splits the host into domain and port.
 func SplitHost(host string) (domain, port string) {
-	for i := len(host) - 1; i >= 0; i-- {
-		if host[i] == ':' {
-			return host[:i], host[i+1:]
-		} else if host[i] < '0' || host[i] > '9' {
-			domain = host
-		}
+	if i := strings.LastIndex(host, ":"); i != -1 {
+		return host[:i], host[i+1:]
 	}
-
+	domain = host
 	return
 }
