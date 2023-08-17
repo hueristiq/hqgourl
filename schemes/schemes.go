@@ -253,6 +253,7 @@ var Schemes = []string{
 	`onenote`,
 	`onenote-cmd`,
 	`opaquelocktoken`,
+	`openid`,
 	`openpgp4fpr`,
 	`otpauth`,
 	`p1`,
