@@ -108,6 +108,6 @@ func SplitHost(host string) (domain, port string) {
 	if i := strings.LastIndex(host, ":"); i != -1 {
 		return host[:i], host[i+1:]
 	}
-	domain = host
-	return
+	
+	return host, ""
 }
