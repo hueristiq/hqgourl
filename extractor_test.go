@@ -419,11 +419,12 @@ func TestStrictMatchHost(t *testing.T) {
 }
 
 func TestModerateMatchHost(t *testing.T) {
-	moderateMatch, _ := Extractor.ModerateMatchHost("example\\.com")
+	moderateMatch, _ := Extractor.ModerateMatchHost(`(\w[a-zA-Z0-9][a-zA-Z0-9-\\.]*\.)?example\.com`)
 	doTest(t, "ModerateMatchHost", moderateMatch, []testCase{
 		{`example.com`, true},
 		// {`foo@bar.com`, nil},
 		{`http://example.com`, true},
+		{`http://api.example.com`, true},
 		// {`Http://foo`, true},
 		{`https://example.io`, nil},
 		{`ftp://example.com`, true},
