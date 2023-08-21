@@ -146,3 +146,43 @@ func TestSplitHost(t *testing.T) {
 		})
 	}
 }
+
+func TestSplitETLDPlusOne(t *testing.T) {
+	tests := []struct {
+		name       string
+		host       string
+		rootDomain string
+		TLD        string
+	}{
+		{
+			name:       "Case: localhost",
+			host:       "localhost",
+			rootDomain: "localhost",
+			TLD:        "",
+		},
+		{
+			name:       "Case: example.com",
+			host:       "example.com",
+			rootDomain: "example",
+			TLD:        "com",
+		},
+		{
+			name:       "Case: example.co.ke",
+			host:       "example.co.ke",
+			rootDomain: "example",
+			TLD:        "co.ke",
+		},
+	}
+
+	for index := range tests {
+		tt := tests[index]
+
+		t.Run(tt.name, func(t *testing.T) {
+			rootDomain, TLD := splitETLDPlusOne(tt.host)
+
+			if rootDomain != tt.rootDomain || TLD != tt.TLD {
+				t.Errorf("SplitHost(%q) = %v, %v, want %v, %v", tt.host, rootDomain, TLD, tt.rootDomain, tt.TLD)
+			}
+		})
+	}
+}

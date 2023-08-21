@@ -49,10 +49,11 @@ type URL struct {
 //  2. It favors absolute paths over relative ones, thus "example.com"
 //     is parsed into url.Host instead of url.Path.
 //  3. It lowercases the Host (not only the Scheme).
+//
 // Parse parses a raw url into a URL structure.
 func Parse(rawURL string) (parsedURL *URL, err error) {
 	parsedURL = &URL{}
-	
+
 	const defaultScheme = "http"
 
 	// Ensure the rawURL has a default scheme if missing
@@ -92,10 +93,8 @@ func Parse(rawURL string) (parsedURL *URL, err error) {
 
 // Used helper function splitETLDPlusOne to clearly separate the logic of splitting ETLD+1.
 func splitETLDPlusOne(etldPlusOne string) (rootDomain, tld string) {
-	i := strings.Index(etldPlusOne, ".")
-	rootDomain = etldPlusOne[:i]
-	tld = etldPlusOne[i+1:]
-	
+	rootDomain, tld, _ = strings.Cut(etldPlusOne, ".")
+
 	return
 }
 
@@ -118,7 +117,7 @@ func SplitHost(host string) (domain, port string) {
 	if i := strings.LastIndex(host, ":"); i != -1 {
 		domain = host[:i]
 		port = host[i+1:]
-		
+
 		return
 	}
 

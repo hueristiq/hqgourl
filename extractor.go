@@ -11,6 +11,10 @@ import (
 	"github.com/hueristiq/hqgourl/unicodes"
 )
 
+//go:generate go run cmd/schemesgen/main.go -p ./schemes/schemes.go
+//go:generate go run cmd/tldsgen/main.go -p ./tlds/tlds.go
+//go:generate go run cmd/unicodesgen/main.go -p ./unicodes/unicodes.go
+
 type URLsExtractor struct{}
 
 // Strict produces a regexp that matches any URL with a scheme in either the

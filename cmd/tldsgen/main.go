@@ -89,7 +89,7 @@ func getTLDList() (TLDs, sources []string) {
 func fetchFromURL(wg *sync.WaitGroup, source, pat string, tldSet map[string]bool) {
 	defer wg.Done()
 
-	resp, err := http.Get(source)
+	resp, err := http.Get(source) //nolint:gosec // To be refactored
 	if err == nil && resp.StatusCode >= 400 {
 		err = errors.New(resp.Status)
 	}

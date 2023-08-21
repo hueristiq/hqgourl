@@ -153,6 +153,7 @@ func writeUnicode() error {
 			// cf. https://golang.org/s/re2syntax and
 			// https://cs.opensource.google/go/go/+/refs/tags/go1.17.6:src/regexp/regexp.go;l=721
 			builder.WriteRune(r[0])
+
 			if r[0] == r[1] {
 				continue
 			}
