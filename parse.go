@@ -77,7 +77,7 @@ func Parse(rawURL string) (parsedURL *URL, err error) {
 	}
 
 	// RootDomain + TLD - Determine the RootDomain and TLD
-	parsedURL.RootDomain, parsedURL.TLD = splitETLDPlusOne(parsedURL.Domain)
+	parsedURL.RootDomain, parsedURL.TLD = splitETLDPlusOne(parsedURL.ETLDPlusOne)
 
 	// Subdomain - Determine the Subdomain, if any
 	if subdomain := strings.TrimSuffix(parsedURL.Domain, "."+parsedURL.ETLDPlusOne); subdomain != parsedURL.Domain {
