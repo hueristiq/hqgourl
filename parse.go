@@ -51,6 +51,8 @@ type URL struct {
 //  3. It lowercases the Host (not only the Scheme).
 // Parse parses a raw url into a URL structure.
 func Parse(rawURL string) (parsedURL *URL, err error) {
+	parsedURL = &URL{}
+	
 	const defaultScheme = "http"
 
 	// Ensure the rawURL has a default scheme if missing
