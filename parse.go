@@ -49,13 +49,16 @@ type URL struct {
 //  2. It favors absolute paths over relative ones, thus "example.com"
 //     is parsed into url.Host instead of url.Path.
 //  3. It lowercases the Host (not only the Scheme).
+// Parse parses a raw url into a URL structure.
 func Parse(rawURL string) (parsedURL *URL, err error) {
-	const defaultScheme string = "http"
+	parsedURL = &URL{}
+	
+	const defaultScheme = "http"
 
+	// Ensure the rawURL has a default scheme if missing
 	rawURL = AddDefaultScheme(rawURL, defaultScheme)
 
-	parsedURL = &URL{}
-
+	// Use net/url's Parse to get the base URL structure
 	parsedURL.URL, err = url.Parse(rawURL)
 	if err != nil {
 		err = fmt.Errorf("[hqgoutils/url]: %w", err)
@@ -65,7 +68,7 @@ func Parse(rawURL string) (parsedURL *URL, err error) {
 
 	parsedURL.Domain, parsedURL.Port = SplitHost(parsedURL.URL.Host)
 
-	// ETLDPlusOne
+	// ETLDPlusOne - Extract ETLDPlusOne
 	parsedURL.ETLDPlusOne, err = publicsuffix.EffectiveTLDPlusOne(parsedURL.Domain)
 	if err != nil {
 		err = fmt.Errorf("[hqgoutils/url] %w", err)
@@ -73,14 +76,12 @@ func Parse(rawURL string) (parsedURL *URL, err error) {
 		return
 	}
 
-	// RootDomain + TLD
-	i := strings.Index(parsedURL.ETLDPlusOne, ".")
-	parsedURL.RootDomain = parsedURL.ETLDPlusOne[0:i]
-	parsedURL.TLD = parsedURL.ETLDPlusOne[i+1:]
+	// RootDomain + TLD - Determine the RootDomain and TLD
+	parsedURL.RootDomain, parsedURL.TLD = splitETLDPlusOne(parsedURL.ETLDPlusOne)
 
-	// Subdomain
-	if rest := strings.TrimSuffix(parsedURL.Domain, "."+parsedURL.ETLDPlusOne); rest != parsedURL.Domain {
-		parsedURL.Subdomain = rest
+	// Subdomain - Determine the Subdomain, if any
+	if subdomain := strings.TrimSuffix(parsedURL.Domain, "."+parsedURL.ETLDPlusOne); subdomain != parsedURL.Domain {
+		parsedURL.Subdomain = subdomain
 	}
 
 	// Extension
@@ -89,12 +90,21 @@ func Parse(rawURL string) (parsedURL *URL, err error) {
 	return
 }
 
+// Used helper function splitETLDPlusOne to clearly separate the logic of splitting ETLD+1.
+func splitETLDPlusOne(etldPlusOne string) (rootDomain, tld string) {
+	i := strings.Index(etldPlusOne, ".")
+	rootDomain = etldPlusOne[:i]
+	tld = etldPlusOne[i+1:]
+	
+	return
+}
+
 // AddDefaultScheme ensures a scheme is added if none exists.
 func AddDefaultScheme(rawURL, scheme string) string {
 	switch {
 	case strings.HasPrefix(rawURL, "//"):
 		return scheme + ":" + rawURL
-	case strings.HasPrefix(rawURL, "://") && !strings.HasPrefix(rawURL, "http"):
+	case strings.HasPrefix(rawURL, "://"):
 		return scheme + rawURL
 	case !strings.Contains(rawURL, "//"):
 		return scheme + "://" + rawURL
@@ -105,13 +115,14 @@ func AddDefaultScheme(rawURL, scheme string) string {
 
 // SplitHost splits the host into domain and port.
 func SplitHost(host string) (domain, port string) {
-	for i := len(host) - 1; i >= 0; i-- {
-		if host[i] == ':' {
-			return host[:i], host[i+1:]
-		} else if host[i] < '0' || host[i] > '9' {
-			domain = host
-		}
+	if i := strings.LastIndex(host, ":"); i != -1 {
+		domain = host[:i]
+		port = host[i+1:]
+		
+		return
 	}
+
+	domain = host
 
 	return
 }
