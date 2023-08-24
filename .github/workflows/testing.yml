@@ -1,4 +1,4 @@
-name: 💅 Lint Test
+name: 🧪 Testing
 
 on:
     push:
@@ -15,13 +15,13 @@ on:
             - '**.mod'
     workflow_dispatch:
 
-permissions:
-    contents: read
-
 jobs:
-    lint:
-        name: Lint Test
-        runs-on: ubuntu-latest
+    build:
+        name: Test
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest, macOS-12]
+        runs-on: ${{ matrix.os }}
         steps:
             -
                 name: Set up Go
@@ -29,12 +29,17 @@ jobs:
                 with:
                     go-version:  '>=1.20'
             -
-                name: Checkout code
+                name: Checkout the repository
                 uses: actions/checkout@v3
                 with:
                     fetch-depth: 0
+            - 
+                name: Go modules hygine
+                run: |
+                    go clean -modcache
+                    go mod tidy
+                working-directory: .
             -
-                name: Run golangci-lint
-                uses: golangci/golangci-lint-action@v3
-                with:
-                    version: v1.52.2
+                name: Go test
+                run: go test -v ./...
+                working-directory: .

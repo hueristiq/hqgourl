@@ -1,0 +1,48 @@
+name: 🚨 CodeQL Analysis
+
+on:
+    push:
+        branches:
+            - "main"
+        paths:
+            - '**.go'
+            - '**.mod'
+    pull_request:
+        branches:
+          - "main"
+        paths:
+            - '**.go'
+            - '**.mod'
+    workflow_dispatch:
+
+jobs:
+    analyze:
+        name: Analyze
+        strategy:
+            fail-fast: false
+            matrix:
+                language: [ 'go' ]
+                # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
+        runs-on: ubuntu-latest
+        permissions:
+            actions: read
+            contents: read
+            security-events: write
+        steps:
+            -
+                name: Checkout the repository
+                uses: actions/checkout@v3
+                with:
+                    fetch-depth: 0
+            # Initializes the CodeQL tools for scanning.
+            - 
+                name: Initialize CodeQL
+                uses: github/codeql-action/init@v2
+                with:
+                    languages: ${{ matrix.language }}
+            - 
+                name: Autobuild
+                uses: github/codeql-action/autobuild@v2
+            - 
+                name: Perform CodeQL Analysis
+                uses: github/codeql-action/analyze@v2
