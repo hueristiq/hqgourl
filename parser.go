@@ -39,7 +39,7 @@ type URL struct {
 	RootDomain  string // e.g. example
 	TLD         string // e.g. com
 	Port        string // e.g. 8080
-	Extension   string // e.g. txt
+	Extension   string // e.g. .txt
 }
 
 // Parse parses a raw url into a URL structure.
@@ -52,9 +52,11 @@ type URL struct {
 //
 // Parse parses a raw url into a URL structure.
 func Parse(rawURL string) (parsedURL *URL, err error) {
-	parsedURL = &URL{}
+	return ParseWithDefaultScheme(rawURL, HTTP)
+}
 
-	const defaultScheme = "http"
+func ParseWithDefaultScheme(rawURL, defaultScheme string) (parsedURL *URL, err error) {
+	parsedURL = &URL{}
 
 	// Ensure the rawURL has a default scheme if missing
 	rawURL = AddDefaultScheme(rawURL, defaultScheme)
@@ -91,22 +93,15 @@ func Parse(rawURL string) (parsedURL *URL, err error) {
 	return
 }
 
-// Used helper function splitETLDPlusOne to clearly separate the logic of splitting ETLD+1.
-func splitETLDPlusOne(etldPlusOne string) (rootDomain, tld string) {
-	rootDomain, tld, _ = strings.Cut(etldPlusOne, ".")
-
-	return
-}
-
 // AddDefaultScheme ensures a scheme is added if none exists.
 func AddDefaultScheme(rawURL, scheme string) string {
 	switch {
 	case strings.HasPrefix(rawURL, "//"):
 		return scheme + ":" + rawURL
-	case strings.HasPrefix(rawURL, "://"):
+	case strings.HasPrefix(rawURL, SchemeSeparator):
 		return scheme + rawURL
 	case !strings.Contains(rawURL, "//"):
-		return scheme + "://" + rawURL
+		return scheme + SchemeSeparator + rawURL
 	default:
 		return rawURL
 	}
@@ -122,6 +117,13 @@ func SplitHost(host string) (domain, port string) {
 	}
 
 	domain = host
+
+	return
+}
+
+// Used helper function splitETLDPlusOne to clearly separate the logic of splitting ETLD+1.
+func splitETLDPlusOne(etldPlusOne string) (rootDomain, tld string) {
+	rootDomain, tld, _ = strings.Cut(etldPlusOne, ".")
 
 	return
 }
