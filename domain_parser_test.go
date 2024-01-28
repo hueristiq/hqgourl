@@ -1,19 +1,29 @@
 package hqgourl_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/hueristiq/hqgourl"
 )
 
+func TestNewDomainParser(t *testing.T) {
+	t.Parallel()
+
+	parser := hqgourl.NewDomainParser()
+	if parser == nil {
+		t.Error("NewDomainParser() = nil; want non-nil")
+	}
+}
+
 func TestDomainParsing(t *testing.T) {
 	t.Parallel()
 
-	testCases := []struct {
-		domain       string
-		expectedSub  string
-		expectedRoot string
-		expectedTLD  string
+	cases := []struct {
+		domain                 string
+		expectedSubdomain      string
+		expectedRootDomain     string
+		expectedTopLevelDomain string
 	}{
 		{"www.example.com", "www", "example", "com"},
 		{"subdomain.example.co.uk", "subdomain", "example", "co.uk"},
@@ -23,22 +33,28 @@ func TestDomainParsing(t *testing.T) {
 
 	parser := hqgourl.NewDomainParser()
 
-	for _, tc := range testCases {
-		sub, root, tld := parser.Parse(tc.domain)
-		if sub != tc.expectedSub || root != tc.expectedRoot || tld != tc.expectedTLD {
-			t.Errorf("Parse(%s): expected %s, %s, %s, got %s, %s, %s", tc.domain, tc.expectedSub, tc.expectedRoot, tc.expectedTLD, sub, root, tld)
-		}
+	for _, c := range cases {
+		c := c
+
+		t.Run(fmt.Sprintf("Parse(%s)", c.domain), func(t *testing.T) {
+			t.Parallel()
+
+			sub, root, tld := parser.Parse(c.domain)
+			if sub != c.expectedSubdomain || root != c.expectedRootDomain || tld != c.expectedTopLevelDomain {
+				t.Errorf("Parse(%s): expected %s, %s, %s, got %s, %s, %s", c.domain, c.expectedSubdomain, c.expectedRootDomain, c.expectedTopLevelDomain, sub, root, tld)
+			}
+		})
 	}
 }
 
 func TestDomainParsingWithCustomTLDs(t *testing.T) {
 	t.Parallel()
 
-	testCases := []struct {
-		domain       string
-		expectedSub  string
-		expectedRoot string
-		expectedTLD  string
+	cases := []struct {
+		domain                 string
+		expectedSubdomain      string
+		expectedRootDomain     string
+		expectedTopLevelDomain string
 	}{
 		{"example.custom", "", "example", "custom"},
 		{"subdomain.example.custom", "subdomain", "example", "custom"},
@@ -48,20 +64,26 @@ func TestDomainParsingWithCustomTLDs(t *testing.T) {
 		hqgourl.DomainParserWithTLDs("custom"),
 	)
 
-	for _, tc := range testCases {
-		sub, root, tld := parser.Parse(tc.domain)
-		if sub != tc.expectedSub || root != tc.expectedRoot || tld != tc.expectedTLD {
-			t.Errorf("Parse(%s): expected %s, %s, %s, got %s, %s, %s", tc.domain, tc.expectedSub, tc.expectedRoot, tc.expectedTLD, sub, root, tld)
-		}
+	for _, c := range cases {
+		c := c
+
+		t.Run(fmt.Sprintf("Parse(%s)", c.domain), func(t *testing.T) {
+			t.Parallel()
+
+			sub, root, tld := parser.Parse(c.domain)
+			if sub != c.expectedSubdomain || root != c.expectedRootDomain || tld != c.expectedTopLevelDomain {
+				t.Errorf("Parse(%s): expected %s, %s, %s, got %s, %s, %s", c.domain, c.expectedSubdomain, c.expectedRootDomain, c.expectedTopLevelDomain, sub, root, tld)
+			}
+		})
 	}
 }
 
 // func TestDomainParserEdgeCases(t *testing.T) {
 // 	testCases := []struct {
 // 		domain       string
-// 		expectedSub  string
-// 		expectedRoot string
-// 		expectedTLD  string
+// 		expectedSubdomain  string
+// 		expectedRootDomain string
+// 		expectedTopLevelDomain  string
 // 	}{
 // 		{"", "", "", ""},
 // 		{"..", "", "", ""},
@@ -79,8 +101,8 @@ func TestDomainParsingWithCustomTLDs(t *testing.T) {
 
 // 	for _, tc := range testCases {
 // 		sub, root, tld := parser.Parse(tc.domain)
-// 		if sub != tc.expectedSub || root != tc.expectedRoot || tld != tc.expectedTLD {
-// 			t.Errorf("Parse(%s): expected %s, %s, %s, got %s, %s, %s", tc.domain, tc.expectedSub, tc.expectedRoot, tc.expectedTLD, sub, root, tld)
+// 		if sub != tc.expectedSubdomain || root != tc.expectedRootDomain || tld != tc.expectedTopLevelDomain {
+// 			t.Errorf("Parse(%s): expected %s, %s, %s, got %s, %s, %s", tc.domain, tc.expectedSubdomain, tc.expectedRootDomain, tc.expectedTopLevelDomain, sub, root, tld)
 // 		}
 // 	}
 // }

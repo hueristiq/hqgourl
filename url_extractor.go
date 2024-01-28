@@ -10,15 +10,30 @@ import (
 	"github.com/hueristiq/hqgourl/unicodes"
 )
 
+// URLExtractor is a struct for extracting URLs from text. It can be configured
+// to recognize URLs based on specific schemes, hosts, and TLDs.
 type URLExtractor struct {
-	withScheme bool
-	schemes    []string
-	withHost   bool
-	hosts      []string
-	withTlds   bool
-	tlds       []string
+	withScheme bool     // Determines if URL extraction is limited to certain schemes.
+	schemes    []string // List of schemes to be considered in URL extraction.
+	withHost   bool     // Flag to limit URL extraction to specific hosts.
+	hosts      []string // List of hosts to be considered in URL extraction.
+	withTlds   bool     // Flag to limit URL extraction to specific TLDs.
+	tlds       []string // List of TLDs to be considered in URL extraction.
 }
 
+// WithScheme configures the URLExtractor to consider only URLs with the specified schemes.
+func (e *URLExtractor) WithScheme(targetSchemes ...string) {
+	URLExtractorWithScheme(targetSchemes...)(e)
+}
+
+// WithHost configures the URLExtractor to consider only URLs with the specified hosts.
+func (e *URLExtractor) WithHost(targetHosts ...string) {
+	URLExtractorWithHost(targetHosts...)(e)
+}
+
+// CompileRegex compiles a regular expression based on the configuration of the URLExtractor.
+// This regex can be used to identify and extract URLs from text.
+// The method combines various patterns to construct a comprehensive regex for URL extraction.
 func (e *URLExtractor) CompileRegex() (regex *regexp.Regexp) {
 	// 1. URLs with scheme
 	URLsWithSchemePattern := `(?:(?i)(?:` + anyOf(schemes.Schemes...) + `|` + anyOf(schemes.SchemesUnofficial...) + `)://|` + anyOf(schemes.SchemesNoAuthority...) + `:)` + pathCont
@@ -80,19 +95,12 @@ func (e *URLExtractor) CompileRegex() (regex *regexp.Regexp) {
 	return
 }
 
-func (e *URLExtractor) WithScheme(targetSchemes ...string) {
-	URLExtractorWithScheme(targetSchemes...)(e)
-}
-
-func (e *URLExtractor) WithHost(targetHosts ...string) {
-	URLExtractorWithHost(targetHosts...)(e)
-}
-
 type URLExtractorOptionsFunc func(*URLExtractor)
 
 type URLExtractorInterface interface {
 	WithScheme(targetSchemes ...string)
 	WithHost(targetHosts ...string)
+
 	CompileRegex() (regex *regexp.Regexp)
 }
 
@@ -154,9 +162,12 @@ const (
 
 var _ URLExtractorInterface = &URLExtractor{}
 
+// NewURLExtractor creates a new instance of URLExtractor with the provided options.
+// This function allows for flexible configuration of the URLExtractor.
 func NewURLExtractor(opts ...URLExtractorOptionsFunc) (extractor *URLExtractor) {
 	extractor = &URLExtractor{}
 
+	// Apply configuration options to the extractor.
 	for _, opt := range opts {
 		opt(extractor)
 	}
@@ -164,6 +175,8 @@ func NewURLExtractor(opts ...URLExtractorOptionsFunc) (extractor *URLExtractor) 
 	return
 }
 
+// URLExtractorWithScheme returns a URLExtractorOptionsFunc that sets the target schemes for URL extraction.
+// This function allows for limiting the URL extraction to specific URL schemes.
 func URLExtractorWithScheme(targetSchemes ...string) URLExtractorOptionsFunc {
 	return func(e *URLExtractor) {
 		e.withScheme = true
@@ -171,6 +184,8 @@ func URLExtractorWithScheme(targetSchemes ...string) URLExtractorOptionsFunc {
 	}
 }
 
+// URLExtractorWithHost returns a URLExtractorOptionsFunc that sets the target hosts for URL extraction.
+// This function allows for limiting the URL extraction to URLs with specific hosts.
 func URLExtractorWithHost(targetHosts ...string) URLExtractorOptionsFunc {
 	return func(e *URLExtractor) {
 		e.withHost = true
@@ -178,6 +193,8 @@ func URLExtractorWithHost(targetHosts ...string) URLExtractorOptionsFunc {
 	}
 }
 
+// URLExtractorWithTLD returns a URLExtractorOptionsFunc that sets the target TLDs for URL extraction.
+// This function allows for limiting the URL extraction to URLs with specific TLDs.
 func URLExtractorWithTLD(targetTLDs ...string) URLExtractorOptionsFunc {
 	return func(e *URLExtractor) {
 		e.withTlds = true
@@ -185,6 +202,8 @@ func URLExtractorWithTLD(targetTLDs ...string) URLExtractorOptionsFunc {
 	}
 }
 
+// anyOf is a helper function that constructs a regex pattern for a set of strings.
+// It is used in compiling the regex patterns for URL extraction.
 func anyOf(strs ...string) string {
 	var b strings.Builder
 

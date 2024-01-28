@@ -8,8 +8,8 @@ A [Go(Golang)](http://golang.org/) package for handling URLs.
 
 * [Features](#features)
 * [Usage](#usage)
-    * [URLs Extraction](#urls-extraction)
-    * [URLs Parsing](#urls-parsing)
+    * [Domain Parsing](#domain-parsingn)
+    * [URL Parsing](#url-parsing)
 * [Contributing](#contributing)
 * [Licensing](#licensing)
 * [Credits](#credits)
@@ -18,8 +18,8 @@ A [Go(Golang)](http://golang.org/) package for handling URLs.
 
 ## Features
 
-* URLs Extraction.
-* URLs Parsing.
+* **Domain Parsing:** Break down domain names into subdomains, root domains, and TLDs.
+* **URL Parsing:** Extends the standard net/url parsing URLs with additional domain-specific information.
 
 ## Installation
 
@@ -29,10 +29,54 @@ go get -v -u github.com/hueristiq/hqgourl
 
 ## Usage
 
-### URLs Extraction
+### Domain Parsing
 
+To parse a domain name into its constituent parts (subdomain, root domain, and TLD):
 
-### URLs Parsing
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/yourusername/hqgourl"
+)
+
+func main() {
+    dp := hqgourl.NewDomainParser()
+
+    subdomain, rootDomain, TLD := dp.Parse("subdomain.example.com")
+    fmt.Printf("Subdomain: %s, Root Domain: %s, TLD: %s\n", subdomain, rootDomain, TLD)
+}
+```
+
+### URL Parsing
+
+To parse a URL and extract its components including subdomain, root domain, TLD, port, and file extension:
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/yourusername/hqgourl"
+)
+
+func main() {
+    up := hqgourl.NewURLParser()
+
+    parsedURL, err := up.Parse("https://subdomain.example.com:8080/path/file.txt")
+    if err != nil {
+        fmt.Println("Error parsing URL:", err)
+        return
+    }
+
+    fmt.Printf("Subdomain: %s\n", parsedURL.Subdomain)
+    fmt.Printf("Root Domain: %s\n", parsedURL.RootDomain)
+    fmt.Printf("TLD: %s\n", parsedURL.TopLevelDomain)
+    fmt.Printf("Port: %d\n", parsedURL.Port)
+    fmt.Printf("File Extension: %s\n", parsedURL.Extension)
+}
+```
 
 ## Contributing
 

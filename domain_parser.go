@@ -11,10 +11,11 @@ import (
 // It uses a suffix array to efficiently identify and extract components like subdomain,
 // root domain, and TLD (Top-Level Domain) from a given domain string.
 type DomainParser struct {
-	sa *suffixarray.Index
+	sa *suffixarray.Index // suffix array for efficient TLD searching
 }
 
 // Parse takes a domain string and splits it into its subdomain, root domain, and TLD components.
+// It uses the findTLDOffset method to determine the boundary of each component.
 func (dp *DomainParser) Parse(domain string) (subdomain, rootDomain, TLD string) {
 	// Split the domain into parts based on '.'
 	parts := strings.Split(domain, ".")

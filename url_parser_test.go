@@ -1,6 +1,7 @@
 package hqgourl_test
 
 import (
+	"fmt"
 	"net/url"
 	"reflect"
 	"testing"
@@ -14,35 +15,37 @@ func TestNewURLParser(t *testing.T) {
 	parser := hqgourl.NewURLParser()
 
 	if parser == nil {
-		t.Error("NewURLParser returned nil")
+		t.Error("NewURLParser() = nil; want non-nil")
 	}
 
 	scheme := "https"
 
 	parserWithDefaultScheme := hqgourl.NewURLParser(hqgourl.URLParserWithDefaultScheme(scheme))
 
+	if parser == nil {
+		t.Errorf("NewURLParser(URLParserWithDefaultScheme(%s)) = nil; want non-nil", scheme)
+	}
+
 	expectedDefaultScheme := parserWithDefaultScheme.DefaultScheme()
 
 	if expectedDefaultScheme != scheme {
-		t.Errorf("Expected default scheme '%s', got '%s'", scheme, expectedDefaultScheme)
+		t.Errorf("NewURLParser(URLParserWithDefaultScheme(%s)).DefaultScheme() = '%s', want '%s'", scheme, expectedDefaultScheme, scheme)
 	}
 }
 
 func TestURLParser_Parse(t *testing.T) {
 	t.Parallel()
 
-	testCases := []struct {
-		name           string
-		rawURL         string
-		defaultScheme  string
-		expectedURL    *hqgourl.URL
-		expectParseErr bool
+	cases := []struct {
+		rawURL            string
+		defaultScheme     string
+		expectedParsedURL *hqgourl.URL
+		expectParseErr    bool
 	}{
 		{
-			name:          "Basic URL",
 			rawURL:        "http://example.com",
 			defaultScheme: "http",
-			expectedURL: &hqgourl.URL{
+			expectedParsedURL: &hqgourl.URL{
 				URL: &url.URL{
 					Scheme: "http",
 					Host:   "example.com",
@@ -52,10 +55,9 @@ func TestURLParser_Parse(t *testing.T) {
 			},
 		},
 		{
-			name:          "Basic URL without scheme",
 			rawURL:        "example.com",
 			defaultScheme: "http",
-			expectedURL: &hqgourl.URL{
+			expectedParsedURL: &hqgourl.URL{
 				URL: &url.URL{
 					Scheme: "http",
 					Host:   "example.com",
@@ -65,10 +67,9 @@ func TestURLParser_Parse(t *testing.T) {
 			},
 		},
 		{
-			name:          "Standard URL with http",
 			rawURL:        "http://example.com/path/file.html",
 			defaultScheme: "http",
-			expectedURL: &hqgourl.URL{
+			expectedParsedURL: &hqgourl.URL{
 				URL: &url.URL{
 					Scheme: "http",
 					Host:   "example.com",
@@ -81,26 +82,26 @@ func TestURLParser_Parse(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		tc := tc
+	for _, c := range cases {
+		c := c
 
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("Parse(%s)", c.rawURL), func(t *testing.T) {
 			t.Parallel()
 
 			parser := hqgourl.NewURLParser(
-				hqgourl.URLParserWithDefaultScheme(tc.defaultScheme),
+				hqgourl.URLParserWithDefaultScheme(c.defaultScheme),
 			)
 
-			parsedURL, err := parser.Parse(tc.rawURL)
+			parsedURL, err := parser.Parse(c.rawURL)
 
-			if (err != nil) != tc.expectParseErr {
-				t.Errorf("Parse() error = %v, expectParseErr %v", err, tc.expectParseErr)
+			if (err != nil) != c.expectParseErr {
+				t.Errorf("Parse() error = %v, expectParseErr %v", err, c.expectParseErr)
 
 				return
 			}
 
-			if !reflect.DeepEqual(parsedURL, tc.expectedURL) {
-				t.Errorf("Parse() = %+v, want %+v", parsedURL, tc.expectedURL)
+			if !reflect.DeepEqual(parsedURL, c.expectedParsedURL) {
+				t.Errorf("Parse() = %+v, want %+v", parsedURL, c.expectedParsedURL)
 			}
 		})
 	}

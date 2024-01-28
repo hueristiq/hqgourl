@@ -10,35 +10,40 @@ import (
 )
 
 // URL extends the standard net/url URL struct with additional domain-related fields.
+// It includes details like subdomain, root domain, and Top-Level Domain (TLD), along with
+// standard URL components. This struct provides a comprehensive representation of a URL.
 type URL struct {
-	// Embedding the standard URL struct for base functionalities.
-	*url.URL
+	*url.URL // Embedding the standard URL struct for base functionalities.
 
-	Subdomain      string
-	RootDomain     string
-	TopLevelDomain string
-	Port           int
-	Extension      string
+	Subdomain      string // Subdomain of the URL.
+	RootDomain     string // Root domain of the URL.
+	TopLevelDomain string // Top-Level Domain (TLD) of the URL.
+	Port           int    // Port number used in the URL.
+	Extension      string // File extension derived from the URL path.
 }
 
 // URLParser encapsulates the logic for parsing URLs with additional domain-specific information.
-// It uses the standard URL parsing capabilities and enhances them with subdomain, root domain,
-// and TLD extraction. It also handles the addition of a default scheme if one is not present.
+// It enhances the standard URL parsing with the extraction of subdomain, root domain, and TLD.
+// It also handles the addition of a default scheme if one is not present in the input URL.
 type URLParser struct {
-	// DefaultScheme is the default URL scheme to use if not specified in the URL.
-	scheme string
-
-	// DomainParser is used to parse domain-specific details from the URL.
-	dp *DomainParser
+	scheme string        // DefaultScheme is the default URL scheme to use if not specified in the URL.
+	dp     *DomainParser // DomainParser used for parsing the domain-specific details.
 }
 
+// WithDefaultScheme allows setting a default scheme for the URLParser.
+// This default scheme is used if the input URL doesn't specify a scheme.
+func (up *URLParser) WithDefaultScheme(scheme string) {
+	URLParserWithDefaultScheme(scheme)(up)
+}
+
+// DefaultScheme returns the currently set default scheme of the URLParser.
 func (up *URLParser) DefaultScheme() (scheme string) {
 	return up.scheme
 }
 
 // Parse takes a raw URL string and parses it into a URL struct.
-// It enhances the standard parsing by attaching domain-specific details like subdomain, root domain, and TLD.
-// The method also ensures that a default scheme is set if the URL does not specify one.
+// It adds domain-specific details like subdomain, root domain, and TLD to the parsed URL.
+// The method also ensures a default scheme is set if the URL does not specify one.
 func (up *URLParser) Parse(rawURL string) (parsedURL *URL, err error) {
 	parsedURL = &URL{}
 
@@ -81,13 +86,17 @@ type URLParserOptionsFunc func(*URLParser)
 
 // URLParserInterface defines the interface for URL parsing functionality.
 type URLParserInterface interface {
+	WithDefaultScheme(scheme string)
+
 	DefaultScheme() (scheme string)
+
 	Parse(rawURL string) (parsedURL *URL, err error)
 }
 
 var _ URLParserInterface = &URLParser{}
 
 // NewURLParser creates a new URLParser with the given options.
+// It initializes a DomainParser for parsing domain details and applies any additional configuration options.
 func NewURLParser(opts ...URLParserOptionsFunc) (up *URLParser) {
 	up = &URLParser{}
 
@@ -104,6 +113,7 @@ func NewURLParser(opts ...URLParserOptionsFunc) (up *URLParser) {
 }
 
 // URLParserWithDefaultScheme returns a URLParserOptionsFunc to set a default scheme.
+// This is useful when parsing URLs that may not have a scheme included.
 func URLParserWithDefaultScheme(scheme string) URLParserOptionsFunc {
 	return func(up *URLParser) {
 		up.scheme = scheme
