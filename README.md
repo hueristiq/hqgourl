@@ -40,7 +40,7 @@ package main
 
 import (
     "fmt"
-    "github.com/yourusername/hqgourl"
+    "github.com/hueristiq/hqgourl"
 )
 
 func main() {
@@ -60,7 +60,7 @@ package main
 
 import (
     "fmt"
-    "github.com/yourusername/hqgourl"
+    "github.com/hueristiq/hqgourl"
 )
 
 func main() {
