@@ -1,9 +1,5 @@
 package hqgourl
 
-const (
-	HTTP             = "http"
-	HTTPS            = "https"
-	SchemeSeparator  = "://"
-	DefaultHTTPPort  = "80"
-	DefaultHTTPSPort = "443"
-)
+//go:generate go run generate/schemes/main.go -o ./schemes/schemes.go
+//go:generate go run generate/tlds/main.go -o ./tlds/tlds.go
+//go:generate go run generate/unicodes/main.go -o ./unicodes/unicodes.go

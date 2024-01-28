@@ -22,7 +22,6 @@ jobs:
             fail-fast: false
             matrix:
                 language: [ 'go' ]
-                # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
         runs-on: ubuntu-latest
         permissions:
             actions: read
