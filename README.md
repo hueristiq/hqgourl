@@ -21,6 +21,7 @@ A [Go(Golang)](http://golang.org/) package for handling URLs.
 
 * **Domain Parsing:** Break down domain names into subdomains, root domains, and TLDs.
 * **URL Parsing:** Extends the standard net/url parsing URLs with additional domain-specific information.
+* **URL Extraction:** Extracts URLs from text based on different criteria like the presence of specific schemes, hosts, or TLDs.
 
 ## Installation
 
