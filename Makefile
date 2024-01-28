@@ -1,44 +1,45 @@
+SHELL = /bin/bash
 
-# Go(Golang) Options
+# --- Go(Golang) ------------------------------------------------------------------------------------
 GOCMD=go
 GOMOD=$(GOCMD) mod
 GOGET=$(GOCMD) get
 GOFMT=$(GOCMD) fmt
 GOTEST=$(GOCMD) test
+GOBUILD=$(GOCMD) build
+GOGENERATE=$(GOCMD) generate
+GOINSTALL=$(GOCMD) install
 GOFLAGS := -v 
 LDFLAGS := -s -w
-
-# Golangci Options
-GOLANGCILINTCMD=golangci-lint
-GOLANGCILINTRUN=$(GOLANGCILINTCMD) run
 
 ifneq ($(shell go env GOOS),darwin)
 LDFLAGS := -extldflags "-static"
 endif
 
-.PHONY: tidy
-tidy:
+GOLANGCILINTCMD=golangci-lint
+GOLANGCILINTRUN=$(GOLANGCILINTCMD) run
+
+.PHONY: go-mod-tidy
+go-mod-tidy:
 	$(GOMOD) tidy
 
-.PHONY: update-deps
-update-deps:
+.PHONY: go-mod-update
+go-mod-update:
 	$(GOGET) -f -t -u ./...
 	$(GOGET) -f -u ./...
 
-.PHONY: format
-format:
+.PHONY: go-fmt
+go-fmt:
 	$(GOFMT) ./...
 
-.PHONY: lint
-lint:
-	$(GOLANGCILINTRUN) ./...
+.PHONY: go-lint
+go-lint: go-fmt
+	$(GOLANGCILINTRUN) $(GOLANGCILINT) ./...
 
-.PHONY: test
-test:
+.PHONY: go-test
+go-test:
 	$(GOTEST) $(GOFLAGS) ./...
 
-.PHONY: generate
-generate:
-	go run cmd/schemesgen/main.go -p ./schemes/schemes.go
-	go run cmd/tldsgen/main.go -p ./tlds/tlds.go
-	go run cmd/unicodesgen/main.go -p ./unicodes/unicodes.go
+.PHONY: go-generate
+go-generate:
+	$(GOGENERATE) $(GOFLAGS) ./...

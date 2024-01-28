@@ -3,7 +3,8 @@
 package schemes
 
 // Schemes is a sorted list of all IANA assigned schemes.
-// Source: https://www.iana.org/assignments/uri-schemes/uri-schemes-1.csv
+// This list is fetched from: 
+//  - https://www.iana.org/assignments/uri-schemes/uri-schemes-1.csv
 var Schemes = []string{
 	`aaa`,
 	`aaas`,
@@ -33,6 +34,7 @@ var Schemes = []string{
 	`bitcoincash`,
 	`blob`,
 	`bolo`,
+	`brid`,
 	`browserext`,
 	`cabal`,
 	`calculator`,
@@ -148,6 +150,7 @@ var Schemes = []string{
 	`ldap`,
 	`ldaps`,
 	`leaptofrogans`,
+	`lid`,
 	`lorawan`,
 	`lpa`,
 	`lvlt`,
@@ -371,6 +374,8 @@ var Schemes = []string{
 	`xmlrpc.beep`,
 	`xmlrpc.beeps`,
 	`xmpp`,
+	`xftp`,
+	`xrcp`,
 	`xri`,
 	`ymsgr`,
 	`z39.50`,

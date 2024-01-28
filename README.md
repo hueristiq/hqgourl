@@ -1,6 +1,6 @@
 # hqgourl
 
-[![license](https://img.shields.io/badge/license-MIT-gray.svg?color=0040FF)](https://github.com/hueristiq/hqgourl/blob/master/LICENSE) ![maintenance](https://img.shields.io/badge/maintained%3F-yes-0040ff.svg) [![open issues](https://img.shields.io/github/issues-raw/hueristiq/hqgourl.svg?style=flat&color=0040ff)](https://github.com/hueristiq/hqgourl/issues?q=is:issue+is:open) [![closed issues](https://img.shields.io/github/issues-closed-raw/hueristiq/hqgourl.svg?style=flat&color=0040ff)](https://github.com/hueristiq/hqgourl/issues?q=is:issue+is:closed) [![contribution](https://img.shields.io/badge/contributions-welcome-0040ff.svg)](https://github.com/hueristiq/hqgourl/blob/master/CONTRIBUTING.md)
+[![go report card](https://goreportcard.com/badge/github.com/hueristiq/hqgourl)](https://goreportcard.com/report/github.com/hueristiq/hqgourl) [![open issues](https://img.shields.io/github/issues-raw/hueristiq/hqgourl.svg?style=flat&color=1E90FF)](https://github.com/hueristiq/hqgourl/issues?q=is:issue+is:open) [![closed issues](https://img.shields.io/github/issues-closed-raw/hueristiq/hqgourl.svg?style=flat&color=1E90FF)](https://github.com/hueristiq/hqgourl/issues?q=is:issue+is:closed) [![license](https://img.shields.io/badge/license-MIT-gray.svg?color=1E90FF)](https://github.com/hueristiq/hqgourl/blob/master/LICENSE) ![maintenance](https://img.shields.io/badge/maintained%3F-yes-1E90FF.svg) [![contribution](https://img.shields.io/badge/contributions-welcome-1E90FF.svg)](https://github.com/hueristiq/hqgourl/blob/master/CONTRIBUTING.md)
 
 A [Go(Golang)](http://golang.org/) package for handling URLs.
 
@@ -8,15 +8,19 @@ A [Go(Golang)](http://golang.org/) package for handling URLs.
 
 * [Features](#features)
 * [Usage](#usage)
-    * [URLs Extraction](#urls-extraction)
-    * [URLs Parsing](#urls-parsing)
+    * [Domain Parsing](#domain-parsingn)
+    * [URL Parsing](#url-parsing)
+    * [URL Extraction](#url-extraction)
 * [Contributing](#contributing)
 * [Licensing](#licensing)
+* [Credits](#credits)
+    * [Contributors](#contributors)
+    * [Similar Projects](#similar-projects)
 
 ## Features
 
-* Extract URLs from text.
-* Parse URLs.
+* **Domain Parsing:** Break down domain names into subdomains, root domains, and TLDs.
+* **URL Parsing:** Extends the standard net/url parsing URLs with additional domain-specific information.
 
 ## Installation
 
@@ -26,128 +30,100 @@ go get -v -u github.com/hueristiq/hqgourl
 
 ## Usage
 
-### URLs Extraction
+### Domain Parsing
+
+To parse a domain name into its constituent parts (subdomain, root domain, and TLD):
 
 ```go
-import "github.com/hueristiq/hqgourl"
+package main
+
+import (
+    "fmt"
+    "github.com/yourusername/hqgourl"
+)
 
 func main() {
-	rxRelaxed := hqgourl.RelaxedExtractor()
-	rxRelaxed.FindString("Do gophers live in golang.org?")  // "golang.org"
-	rxRelaxed.FindString("This string does not have a URL") // ""
+    dp := hqgourl.NewDomainParser()
 
-	rxStrict := hqgourl.StrictExtractor()
-	rxStrict.FindAllString("must have scheme: http://foo.com/.", -1) // []string{"http://foo.com/"}
-	rxStrict.FindAllString("no scheme, no match: foo.com", -1)       // []string{}
+    subdomain, rootDomain, TLD := dp.Parse("subdomain.example.com")
+    fmt.Printf("Subdomain: %s, Root Domain: %s, TLD: %s\n", subdomain, rootDomain, TLD)
 }
 ```
 
-### URLs Parsing
+### URL Parsing
+
+To parse a URL and extract its components including subdomain, root domain, TLD, port, and file extension:
 
 ```go
-import "github.com/hueristiq/hqgourl"
+package main
+
+import (
+    "fmt"
+    "github.com/yourusername/hqgourl"
+)
 
 func main() {
-    url, _ := hqgourl.Parse("example.com")
-    // url.Scheme == "http"
-    // url.Host == "example.com"
+    up := hqgourl.NewURLParser()
 
-    fmt.Print(url)
-    // Prints http://example.com
+    parsedURL, err := up.Parse("https://subdomain.example.com:8080/path/file.txt")
+    if err != nil {
+        fmt.Println("Error parsing URL:", err)
+        return
+    }
+
+    fmt.Printf("Subdomain: %s\n", parsedURL.Subdomain)
+    fmt.Printf("Root Domain: %s\n", parsedURL.RootDomain)
+    fmt.Printf("TLD: %s\n", parsedURL.TopLevelDomain)
+    fmt.Printf("Port: %d\n", parsedURL.Port)
+    fmt.Printf("File Extension: %s\n", parsedURL.Extension)
 }
 ```
 
-The [hqgourl.Parse()](https://godoc.org/github.com/hueristiq/hqgourl#Parse) is compatible with the same function from [net/url](https://golang.org/pkg/net/url/#Parse) pkg, but has slightly different behavior. It enforces default scheme and favors absolute URLs over relative paths.
+Set a default scheme:
 
-<table>
-<thead>
-<tr>
-<th><a href="https://godoc.org/github.com/hueristiq/hqgourl#Parse">github.com/hueristiq/hqgourl</a></th>
-<th><a href="https://golang.org/pkg/net/url/#Parse">net/url</a></th>
-</tr>
-</thead>
-<tr>
-<td>
-<pre>
-hqgourl.Parse("example.com")
+```go
+up := hqgourl.NewURLParser(hqgourl.URLParserWithDefaultScheme("https"))
+```
 
-&url.URL{
-   Scheme:  "http",
-   Host:    "example.com",
-   Path:    "",
-}
-</pre>
-</td>
-<td>
-<pre>
-url.Parse("example.com")
+### URL Extraction
 
-&url.URL{
-   Scheme:  "",
-   Host:    "",
-   Path:    "example.com",
-}
-</pre>
-</td>
-</tr>
-<tr>
-<td>
-<pre>
-hqgourl.Parse("localhost:8080")
+Create a URL extractor to find URLs within text:
 
-&url.URL{
-   Scheme:  "http",
-   Host:    "localhost:8080",
-   Path:    "",
-   Opaque:  "",
-}
-</pre>
-</td>
-<td>
-<pre>
-url.Parse("localhost:8080")
+```go
+extractor := hqgourl.NewURLExtractor()
+regex := extractor.CompileRegex()
+// Use regex to find URLs in text
+```
 
-&url.URL{
-   Scheme:  "localhost",
-   Host:    "",
-   Path:    "",
-   Opaque:  "8080",
-}
-</pre>
-</td>
-</tr>
-<tr>
-<td>
-<pre>
-hqgourl.Parse("user.local:8000/path")
+Configure the extractor to target specific schemes or hosts:
 
-&url.URL{
-   Scheme:  "http",
-   Host:    "user.local:8000",
-   Path:    "/path",
-   Opaque:  "",
-}
-</pre>
-</td>
-<td>
-<pre>
-url.Parse("user.local:8000/path")
-
-&url.URL{
-   Scheme:  "user.local",
-   Host:    "",
-   Path:    "",
-   Opaque:  "8000/path",
-}
-</pre>
-</td>
-</tr>
-</table>
+```go
+extractor := hqgourl.NewURLExtractor(
+    hqgourl.URLExtractorWithScheme("http", "https"),
+    hqgourl.URLExtractorWithHost("example.com"),
+)
+regex := extractor.CompileRegex()
+// Use regex as before
+```
 
 ## Contributing
 
-[Issues](https://github.com/hueristiq/hqgourl/issues) and [Pull Requests](https://github.com/hueristiq/hqgourl/pulls) are welcome! **Check out the [contribution guidelines](./CONTRIBUTING.md)**.
+[Issues](https://github.com/hueristiq/hqgourl/issues) and [Pull Requests](https://github.com/hueristiq/hqgourl/pulls) are welcome! **Check out the [contribution guidelines](https://github.com/hueristiq/hqgourl/blob/master/CONTRIBUTING.md).**
 
 ## Licensing
 
-This package is distributed under the [MIT license](https://github.com/hueristiq/hqgourl/blob/master/LICENSE).
+This utility is distributed under the [MIT license](https://github.com/hueristiq/hqgourl/blob/master/LICENSE).
+
+## Credits
+
+### Contributors
+
+Thanks to the amazing [contributors](https://github.com/hueristiq/hqgourl/graphs/contributors) for keeping this project alive.
+
+[![contributors](https://contrib.rocks/image?repo=hueristiq/hqgourl&max=500)](https://github.com/hueristiq/hqgourl/graphs/contributors)
+
+### Similar Projects
+
+Thanks to similar open source projects - check them out, may fit in your needs.
+
+[DomainParser](https://github.com/Cgboal/DomainParser) ◇ [urlx](https://github.com/goware/urlx) ◇ [xurls](https://github.com/mvdan/xurls)
