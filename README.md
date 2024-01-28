@@ -10,6 +10,7 @@ A [Go(Golang)](http://golang.org/) package for handling URLs.
 * [Usage](#usage)
     * [Domain Parsing](#domain-parsingn)
     * [URL Parsing](#url-parsing)
+    * [URL Extraction](#url-extraction)
 * [Contributing](#contributing)
 * [Licensing](#licensing)
 * [Credits](#credits)
@@ -76,6 +77,33 @@ func main() {
     fmt.Printf("Port: %d\n", parsedURL.Port)
     fmt.Printf("File Extension: %s\n", parsedURL.Extension)
 }
+```
+
+Set a default scheme:
+
+```go
+up := hqgourl.NewURLParser(hqgourl.URLParserWithDefaultScheme("https"))
+```
+
+### URL Extraction
+
+Create a URL extractor to find URLs within text:
+
+```go
+extractor := hqgourl.NewURLExtractor()
+regex := extractor.CompileRegex()
+// Use regex to find URLs in text
+```
+
+Configure the extractor to target specific schemes or hosts:
+
+```go
+extractor := hqgourl.NewURLExtractor(
+    hqgourl.URLExtractorWithScheme("http", "https"),
+    hqgourl.URLExtractorWithHost("example.com"),
+)
+regex := extractor.CompileRegex()
+// Use regex as before
 ```
 
 ## Contributing
