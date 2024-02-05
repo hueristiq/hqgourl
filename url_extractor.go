@@ -10,39 +10,41 @@ import (
 	"github.com/hueristiq/hqgourl/unicodes"
 )
 
-// URLExtractor is a struct for extracting URLs from text. It can be configured
-// to recognize URLs based on specific schemes, hosts, and TLDs.
+// URLExtractorStrictness defines the strictness levels for URL extraction.
+type URLExtractorStrictness int
+
+// IsHigh checks if the strictness level is high.
+func (s URLExtractorStrictness) IsHigh() bool {
+	return s == URLExtractorHighStrictness
+}
+
+// IsMedium checks if the strictness level is medium.
+func (s URLExtractorStrictness) IsMedium() bool {
+	return s == URLExtractorMediumStrictness
+}
+
+// IsLow checks if the strictness level is low.
+func (s URLExtractorStrictness) IsLow() bool {
+	return s == URLExtractorLowStrictness
+}
+
+// URLExtractor is a struct that extracts URLs from text with configurable strictness.
 type URLExtractor struct {
-	withScheme bool     // Determines if URL extraction is limited to certain schemes.
-	schemes    []string // List of schemes to be considered in URL extraction.
-	withHost   bool     // Flag to limit URL extraction to specific hosts.
-	hosts      []string // List of hosts to be considered in URL extraction.
-	withTlds   bool     // Flag to limit URL extraction to specific TLDs.
-	tlds       []string // List of TLDs to be considered in URL extraction.
+	strictness URLExtractorStrictness // The strictness level for URL extraction.
 }
 
-// WithScheme configures the URLExtractor to consider only URLs with the specified schemes.
-func (e *URLExtractor) WithScheme(targetSchemes ...string) {
-	URLExtractorWithScheme(targetSchemes...)(e)
+// Strictness returns the current strictness level of the URLExtractor.
+func (e *URLExtractor) Strictness() (strictness URLExtractorStrictness) {
+	return e.strictness
 }
 
-// WithHost configures the URLExtractor to consider only URLs with the specified hosts.
-func (e *URLExtractor) WithHost(targetHosts ...string) {
-	URLExtractorWithHost(targetHosts...)(e)
-}
-
-// CompileRegex compiles a regular expression based on the configuration of the URLExtractor.
-// This regex can be used to identify and extract URLs from text.
-// The method combines various patterns to construct a comprehensive regex for URL extraction.
+// CompileRegex compiles the regex based on the URLExtractor's strictness level.
+// It combines schemes, TLDs, and path patterns to create a regex that matches URLs.
 func (e *URLExtractor) CompileRegex() (regex *regexp.Regexp) {
-	// 1. URLs with scheme
-	URLsWithSchemePattern := `(?:(?i)(?:` + anyOf(schemes.Schemes...) + `|` + anyOf(schemes.SchemesUnofficial...) + `)://|` + anyOf(schemes.SchemesNoAuthority...) + `:)` + pathCont
+	// Scheme Pattern: Matches both official and unofficial schemes.
+	schemePattern := `(?:(?i)(?:` + anyOf(schemes.Schemes...) + `|` + anyOf(schemes.SchemesUnofficial...) + `)://|` + anyOf(schemes.SchemesNoAuthority...) + `:)`
 
-	if len(e.schemes) > 0 {
-		URLsWithSchemePattern = `(?i)(?:` + anyOf(e.schemes...) + `)://` + pathCont
-	}
-
-	// 2. URLs without scheme but has host
+	// TLD Pattern: Separates ASCII and Unicode TLDs, includes pseudo TLDs and punycode representation.
 	var asciiTLDs, unicodeTLDs []string
 
 	for i, tld := range tlds.TLDs {
@@ -56,53 +58,56 @@ func (e *URLExtractor) CompileRegex() (regex *regexp.Regexp) {
 
 	punycode := `xn--[a-z0-9-]+`
 
-	// Use \b to make sure ASCII TLDs are immediately followed by a word break.
-	// We can't do that with unicode TLDs, as they don't see following
-	// whitespace as a word break.
 	TLDsPattern := `(?:(?i)` + punycode + `|` + anyOf(append(asciiTLDs, tlds.PseudoTLDs...)...) + `\b|` + anyOf(unicodeTLDs...) + `)`
 
-	domain := _subdomainPattern + TLDsPattern
+	// Domain and Host Patterns: Include support for subdomains, IPv4, and IPv6 addresses.
+	domainPattern := _subdomainPattern + TLDsPattern
+	hostPattern := `(?:` + domainPattern + `|\[` + _IPv6AddressPattern + `\]|\b` + _IPv4AdressPattern + `\b)`
 
-	// Web URLs pattern.
-	hostName := `(?:` + domain + `|\[` + _IPv6AddressPattern + `\]|\b` + _IPv4AdressPattern + `\b)`
-
-	webURL := hostName + _port + `(?:/` + pathCont + `|/)?`
+	webURL := hostPattern + _port + `(?:/` + pathCont + `|/)?`
 
 	// Emails pattern.
-	email := `(?P<relaxedEmail>[a-zA-Z0-9._%\-+]+@` + domain + `)`
+	email := `(?P<relaxedEmail>[a-zA-Z0-9._%\-+]+@` + domainPattern + `)`
 
-	if len(e.hosts) > 0 {
-		email = `(?P<relaxedEmail>[a-zA-Z0-9._%\-+]+@` + anyOf(e.hosts...) + `)`
-	}
-
+	URLsWithSchemePattern := schemePattern + pathCont
 	URLsWithHostPattern := webURL + `|` + email + `|` + _nonEmptyIPv6AddressPattern
-
-	// 3. URLs without scheme and host
 	RelativeURLsPattern := `(\/[\w\/?=&#.-]*)|([\w\/?=&#.-]+?(?:\/[\w\/?=&#.-]+)+)`
 
-	pattern := URLsWithSchemePattern + `|` + URLsWithHostPattern + `|` + RelativeURLsPattern
+	// Selecting the pattern based on the specified strictness level.
+	pattern := ``
 
-	if e.withScheme {
-		pattern = URLsWithSchemePattern
-	} else if e.withHost {
+	switch {
+	case e.strictness.IsLow():
+		pattern = URLsWithSchemePattern + `|` + URLsWithHostPattern + `|` + RelativeURLsPattern
+	case e.strictness.IsMedium():
 		pattern = URLsWithSchemePattern + `|` + URLsWithHostPattern
+	case e.strictness.IsHigh():
+		pattern = URLsWithSchemePattern
 	}
 
+	// Compiling the final regex pattern.
 	regex = regexp.MustCompile(pattern)
-
+	// Ensures the longest possible match is found.
 	regex.Longest()
 
 	return
 }
 
+// URLExtractorOptionsFunc defines a function type for configuring URLExtractor instances.
 type URLExtractorOptionsFunc func(*URLExtractor)
 
+// URLExtractorInterface defines the interface for URLExtractor, ensuring it implements certain methods.
 type URLExtractorInterface interface {
-	WithScheme(targetSchemes ...string)
-	WithHost(targetHosts ...string)
-
+	Strictness() (strictness URLExtractorStrictness)
 	CompileRegex() (regex *regexp.Regexp)
 }
+
+// Predefined strictness levels.
+const (
+	URLExtractorLowStrictness    = URLExtractorStrictness(1)
+	URLExtractorMediumStrictness = URLExtractorStrictness(2)
+	URLExtractorHighStrictness   = URLExtractorStrictness(3)
+)
 
 const (
 	// pathCont is based on https://www.rfc-editor.org/rfc/rfc3987#section-2.2
@@ -165,9 +170,10 @@ var _ URLExtractorInterface = &URLExtractor{}
 // NewURLExtractor creates a new instance of URLExtractor with the provided options.
 // This function allows for flexible configuration of the URLExtractor.
 func NewURLExtractor(opts ...URLExtractorOptionsFunc) (extractor *URLExtractor) {
-	extractor = &URLExtractor{}
+	extractor = &URLExtractor{
+		strictness: URLExtractorLowStrictness,
+	}
 
-	// Apply configuration options to the extractor.
 	for _, opt := range opts {
 		opt(extractor)
 	}
@@ -175,30 +181,24 @@ func NewURLExtractor(opts ...URLExtractorOptionsFunc) (extractor *URLExtractor) 
 	return
 }
 
-// URLExtractorWithScheme returns a URLExtractorOptionsFunc that sets the target schemes for URL extraction.
-// This function allows for limiting the URL extraction to specific URL schemes.
-func URLExtractorWithScheme(targetSchemes ...string) URLExtractorOptionsFunc {
+// URLExtractorWithHighStrictness returns an option function to set high strictness.
+func URLExtractorWithHighStrictness() URLExtractorOptionsFunc {
 	return func(e *URLExtractor) {
-		e.withScheme = true
-		e.schemes = targetSchemes
+		e.strictness = URLExtractorHighStrictness
 	}
 }
 
-// URLExtractorWithHost returns a URLExtractorOptionsFunc that sets the target hosts for URL extraction.
-// This function allows for limiting the URL extraction to URLs with specific hosts.
-func URLExtractorWithHost(targetHosts ...string) URLExtractorOptionsFunc {
+// URLExtractorWithMediumStrictness returns an option function to set medium strictness.
+func URLExtractorWithMediumStrictness() URLExtractorOptionsFunc {
 	return func(e *URLExtractor) {
-		e.withHost = true
-		e.schemes = targetHosts
+		e.strictness = URLExtractorMediumStrictness
 	}
 }
 
-// URLExtractorWithTLD returns a URLExtractorOptionsFunc that sets the target TLDs for URL extraction.
-// This function allows for limiting the URL extraction to URLs with specific TLDs.
-func URLExtractorWithTLD(targetTLDs ...string) URLExtractorOptionsFunc {
+// URLExtractorWithLowStrictness returns an option function to set low strictness.
+func URLExtractorWithLowStrictness() URLExtractorOptionsFunc {
 	return func(e *URLExtractor) {
-		e.withTlds = true
-		e.tlds = targetTLDs
+		e.strictness = URLExtractorLowStrictness
 	}
 }
 

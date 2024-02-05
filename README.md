@@ -20,8 +20,8 @@ A [Go(Golang)](http://golang.org/) package for handling URLs.
 ## Features
 
 * **Domain Parsing:** Break down domain names into subdomains, root domains, and TLDs.
-* **URL Parsing:** Extends the standard net/url parsing URLs with additional domain-specific information.
-* **URL Extraction:** Extracts URLs from text based on different criteria like the presence of specific schemes, hosts, or TLDs.
+* **URL Parsing:** Extends the standard `net/url` URLs parsing with additional fields.
+* **URL Extraction:** Extracts URLs from text.
 
 ## Installation
 
@@ -32,8 +32,6 @@ go get -v -u github.com/hueristiq/hqgourl
 ## Usage
 
 ### Domain Parsing
-
-To parse a domain name into its constituent parts (subdomain, root domain, and TLD):
 
 ```go
 package main
@@ -52,8 +50,6 @@ func main() {
 ```
 
 ### URL Parsing
-
-To parse a URL and extract its components including subdomain, root domain, TLD, port, and file extension:
 
 ```go
 package main
@@ -88,23 +84,27 @@ up := hqgourl.NewURLParser(hqgourl.URLParserWithDefaultScheme("https"))
 
 ### URL Extraction
 
-Create a URL extractor to find URLs within text:
+You can create a `URLExtractor` instance with default settings or customize its strictness using the provided options functions:
 
 ```go
+// Default extractor with low strictness
 extractor := hqgourl.NewURLExtractor()
-regex := extractor.CompileRegex()
-// Use regex to find URLs in text
+
+// Custom extractor with high strictness
+customExtractor := hqgourl.NewURLExtractor(hqgourl.URLExtractorWithHighStrictness())
 ```
 
-Configure the extractor to target specific schemes or hosts:
+Once you have an URLExtractor instance, use the CompileRegex method to compile the regex based on your strictness requirement. Then, use the compiled regex to find URLs within your text:
 
 ```go
-extractor := hqgourl.NewURLExtractor(
-    hqgourl.URLExtractorWithScheme("http", "https"),
-    hqgourl.URLExtractorWithHost("example.com"),
-)
 regex := extractor.CompileRegex()
-// Use regex as before
+
+text := "Visit our website at https://example.com for more information."
+urls := regex.FindAllString(text, -1)
+
+for _, url := range urls {
+    fmt.Println(url)
+}
 ```
 
 ## Contributing
@@ -127,4 +127,4 @@ Thanks to the amazing [contributors](https://github.com/hueristiq/hqgourl/graphs
 
 Thanks to similar open source projects - check them out, may fit in your needs.
 
-[DomainParser](https://github.com/Cgboal/DomainParser) ◇ [urlx](https://github.com/goware/urlx) ◇ [xurls](https://github.com/mvdan/xurls)
+[DomainParser](https://github.com/Cgboal/DomainParser) ◇ [urlx](https://github.com/goware/urlx) ◇ [xurls](https://github.com/mvdan/xurls) ◇ [goware's tldomains](https://github.com/goware/tldomains) ◇ [jakewarren's tldomains](https://github.com/jakewarren/tldomains)

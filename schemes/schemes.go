@@ -244,6 +244,8 @@ var Schemes = []string{
 	`mumble`,
 	`mupdate`,
 	`mvn`,
+	`mvrp`,
+	`mvrps`,
 	`news`,
 	`nfs`,
 	`ni`,
