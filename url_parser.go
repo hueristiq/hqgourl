@@ -26,8 +26,9 @@ type URL struct {
 // It enhances the standard URL parsing with the extraction of subdomain, root domain, and TLD.
 // It also handles the addition of a default scheme if one is not present in the input URL.
 type URLParser struct {
-	scheme string        // DefaultScheme is the default URL scheme to use if not specified in the URL.
-	dp     *DomainParser // DomainParser used for parsing the domain-specific details.
+	scheme string // DefaultScheme is the default URL scheme to use if not specified in the URL.
+
+	dp *DomainParser // DomainParser used for parsing the domain-specific details.
 }
 
 // WithDefaultScheme allows setting a default scheme for the URLParser.
