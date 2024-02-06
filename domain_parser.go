@@ -55,6 +55,8 @@ func (dp *DomainParser) findTLDOffset(parts []string) (offset int) {
 		// If a match is found and it's longer than any previous match, update the offset.
 		if len(indices) > 0 {
 			offset = i - 1
+		}else{
+			return // early stop if not found
 		}
 	}
 
