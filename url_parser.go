@@ -15,11 +15,9 @@ import (
 type URL struct {
 	*url.URL // Embedding the standard URL struct for base functionalities.
 
-	Subdomain      string // Subdomain of the URL.
-	RootDomain     string // Root domain of the URL.
-	TopLevelDomain string // Top-Level Domain (TLD) of the URL.
-	Port           int    // Port number used in the URL.
-	Extension      string // File extension derived from the URL path.
+	Domain    *Domain
+	Port      int    // Port number used in the URL.
+	Extension string // File extension derived from the URL path.
 }
 
 // URLParser encapsulates the logic for parsing URLs with additional domain-specific information.
@@ -72,10 +70,7 @@ func (up *URLParser) Parse(rawURL string) (parsedURL *URL, err error) {
 	domainRegex := regexp.MustCompile(`(?i)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}`)
 
 	if domainRegex.MatchString(parsedURL.Host) {
-		// Parse domain-specific parts
-		parsedDomain := up.dp.Parse(parsedURL.Host)
-
-		parsedURL.Subdomain, parsedURL.RootDomain, parsedURL.TopLevelDomain = parsedDomain.Sub, parsedDomain.Root, parsedDomain.TopLevel
+		parsedURL.Domain = up.dp.Parse(parsedURL.Host)
 	}
 
 	// Extract file extension from the path
