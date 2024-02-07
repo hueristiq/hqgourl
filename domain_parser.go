@@ -22,7 +22,9 @@ func (d *Domain) String() (domain string) {
 		parts = append(parts, d.Sub)
 	}
 
-	parts = append(parts, d.Root)
+	if d.Root != "" {
+		parts = append(parts, d.Root)
+	}
 
 	if d.TopLevel != "" {
 		parts = append(parts, d.TopLevel)
@@ -63,6 +65,12 @@ func (dp *DomainParser) Parse(domain string) (parsedDomain *Domain) {
 	// Identify the index where the TLD begins using the findTLDOffset method.
 	TLDOffset := dp.findTLDOffset(parts)
 
+	if TLDOffset < 0 {
+		parsedDomain.Root = domain
+
+		return
+	}
+
 	// Based on the TLD offset, separate the domain string into subdomain, root domain, and TLD.
 	parsedDomain.Sub = strings.Join(parts[:TLDOffset], ".")
 	parsedDomain.Root = parts[TLDOffset]
@@ -75,6 +83,8 @@ func (dp *DomainParser) Parse(domain string) (parsedDomain *Domain) {
 // It reverses through the parts of the domain to accurately handle cases where subdomains may
 // mimic TLDs. The method uses the suffix array to find known TLDs efficiently.
 func (dp *DomainParser) findTLDOffset(parts []string) (offset int) {
+	offset = -1
+
 	partsLength := len(parts)
 	partsLastIndex := partsLength - 1
 
