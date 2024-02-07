@@ -75,7 +75,7 @@ func main() {
 	if err = tmpl.Execute(f, struct {
 		TLDs []string
 	}{
-		TLDs: TLDs,
+		TLDs: remDuplicates(TLDs),
 	}); err != nil {
 		hqgolog.Fatal().Msgf(err.Error())
 	}
@@ -117,6 +117,25 @@ func getTLDsFromIANA() (TLDs []string, err error) {
 	}
 
 	return
+}
+
+// remDuplicates
+// removes duplicate elements from a slice of any type that satisfies the comparable constraint.
+func remDuplicates[T comparable](slice []T) []T {
+	keys := make(map[T]bool)
+
+	var list []T
+
+	for _, entry := range slice {
+
+		if _, exists := keys[entry]; !exists {
+			keys[entry] = true
+
+			list = append(list, entry)
+		}
+	}
+
+	return list
 }
 
 func getEffectiveTLDsFromPublicSuffix() (eTLDs []string, err error) {
