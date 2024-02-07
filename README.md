@@ -44,8 +44,8 @@ import (
 func main() {
     dp := hqgourl.NewDomainParser()
 
-    subdomain, rootDomain, TLD := dp.Parse("subdomain.example.com")
-    fmt.Printf("Subdomain: %s, Root Domain: %s, TLD: %s\n", subdomain, rootDomain, TLD)
+    parsedDomain := dp.Parse("subdomain.example.com")
+    fmt.Printf("Subdomain: %s, Root Domain: %s, TLD: %s\n", parsedDomain.Sub, parsedDomain.Root, parsedDomain.TopLevel)
 }
 ```
 
@@ -68,9 +68,9 @@ func main() {
         return
     }
 
-    fmt.Printf("Subdomain: %s\n", parsedURL.Subdomain)
-    fmt.Printf("Root Domain: %s\n", parsedURL.RootDomain)
-    fmt.Printf("TLD: %s\n", parsedURL.TopLevelDomain)
+    fmt.Printf("Subdomain: %s\n", parsedURL.Domain.Sub)
+    fmt.Printf("Root Domain: %s\n", parsedURL.Domain.Root)
+    fmt.Printf("TLD: %s\n", parsedURL.Domain.TopLevel)
     fmt.Printf("Port: %d\n", parsedURL.Port)
     fmt.Printf("File Extension: %s\n", parsedURL.Extension)
 }

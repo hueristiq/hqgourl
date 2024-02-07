@@ -43,49 +43,61 @@ func TestURLParser_Parse(t *testing.T) {
 		expectParseErr    bool
 	}{
 		{
-			rawURL:        "http://example.com",
-			defaultScheme: "http",
-			expectedParsedURL: &hqgourl.URL{
+			"http://example.com",
+			"http",
+			&hqgourl.URL{
 				URL: &url.URL{
 					Scheme: "http",
 					Host:   "example.com",
 				},
-				RootDomain:     "example",
-				TopLevelDomain: "com",
+				Domain: &hqgourl.Domain{
+					Sub:      "",
+					Root:     "example",
+					TopLevel: "com",
+				},
 			},
+			false,
 		},
 		{
-			rawURL:        "example.com",
-			defaultScheme: "http",
-			expectedParsedURL: &hqgourl.URL{
+			"example.com",
+			"http",
+			&hqgourl.URL{
 				URL: &url.URL{
 					Scheme: "http",
 					Host:   "example.com",
 				},
-				RootDomain:     "example",
-				TopLevelDomain: "com",
+				Domain: &hqgourl.Domain{
+					Sub:      "",
+					Root:     "example",
+					TopLevel: "com",
+				},
 			},
+			false,
 		},
 		{
-			rawURL:        "http://example.com/path/file.html",
-			defaultScheme: "http",
-			expectedParsedURL: &hqgourl.URL{
+			"http://example.com/path/file.html",
+			"http",
+			&hqgourl.URL{
 				URL: &url.URL{
 					Scheme: "http",
 					Host:   "example.com",
 					Path:   "/path/file.html",
 				},
-				RootDomain:     "example",
-				TopLevelDomain: "com",
-				Extension:      ".html",
+				Domain: &hqgourl.Domain{
+					Sub:      "",
+					Root:     "example",
+					TopLevel: "com",
+				},
+				Extension: ".html",
 			},
+			false,
 		},
 	}
 
 	for _, c := range cases {
 		c := c
 
-		t.Run(fmt.Sprintf("Parse(%s)", c.rawURL), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Parse(%q)", c.rawURL), func(t *testing.T) {
 			t.Parallel()
 
 			parser := hqgourl.NewURLParser(
@@ -95,13 +107,13 @@ func TestURLParser_Parse(t *testing.T) {
 			parsedURL, err := parser.Parse(c.rawURL)
 
 			if (err != nil) != c.expectParseErr {
-				t.Errorf("Parse() error = %v, expectParseErr %v", err, c.expectParseErr)
+				t.Errorf("Parse(%q) error = %v, expectParseErr %v", c.rawURL, err, c.expectParseErr)
 
 				return
 			}
 
 			if !reflect.DeepEqual(parsedURL, c.expectedParsedURL) {
-				t.Errorf("Parse() = %+v, want %+v", parsedURL, c.expectedParsedURL)
+				t.Errorf("Parse(%q) = %+v, want %+v", c.rawURL, parsedURL, c.expectedParsedURL)
 			}
 		})
 	}
