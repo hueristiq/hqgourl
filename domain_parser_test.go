@@ -90,6 +90,14 @@ func TestDomainParsing(t *testing.T) {
 			},
 		},
 		{
+			"co.uk",
+			&hqgourl.Domain{
+				Sub:      "",
+				Root:     "co.uk",
+				TopLevel: "",
+			},
+		},
+		{
 			"example.com",
 			&hqgourl.Domain{
 				Sub:      "",
@@ -119,6 +127,14 @@ func TestDomainParsing(t *testing.T) {
 				Sub:      "www",
 				Root:     "example",
 				TopLevel: "co.uk",
+			},
+		},
+		{
+			"www.example.custom",
+			&hqgourl.Domain{
+				Sub:      "",
+				Root:     "www.example.custom",
+				TopLevel: "",
 			},
 		},
 	}
