@@ -3,8 +3,8 @@
 package schemes
 
 // Schemes is a sorted list of all IANA assigned schemes.
-// This list is fetched from: 
-//  - https://www.iana.org/assignments/uri-schemes/uri-schemes-1.csv
+// This list is fetched from:
+//   - https://www.iana.org/assignments/uri-schemes/uri-schemes-1.csv
 var Schemes = []string{
 	`aaa`,
 	`aaas`,

@@ -73,7 +73,9 @@ func (up *URLParser) Parse(rawURL string) (parsedURL *URL, err error) {
 
 	if domainRegex.MatchString(parsedURL.Host) {
 		// Parse domain-specific parts
-		parsedURL.Subdomain, parsedURL.RootDomain, parsedURL.TopLevelDomain = up.dp.Parse(parsedURL.Host)
+		parsedDomain := up.dp.Parse(parsedURL.Host)
+
+		parsedURL.Subdomain, parsedURL.RootDomain, parsedURL.TopLevelDomain = parsedDomain.Sub, parsedDomain.Root, parsedDomain.TopLevel
 	}
 
 	// Extract file extension from the path
