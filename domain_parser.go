@@ -52,9 +52,11 @@ func (dp *DomainParser) findTLDOffset(parts []string) (offset int) {
 		// Search for the TLD in the suffix array.
 		indices := dp.sa.Lookup([]byte(TLD), -1)
 
-		// If a match is found and it's longer than any previous match, update the offset.
+		// If a match is found, update the offset, else break.
 		if len(indices) > 0 {
 			offset = i - 1
+		} else {
+			break
 		}
 	}
 
