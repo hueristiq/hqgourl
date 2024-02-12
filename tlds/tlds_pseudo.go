@@ -1,7 +1,7 @@
 package tlds
 
 // PseudoTLDs is a sorted list of some widely used unofficial TLDs.
-// Sources:
+// The list is fetched from:
 //   - https://en.wikipedia.org/wiki/Pseudo-top-level_domain
 //   - https://en.wikipedia.org/wiki/Category:Pseudo-top-level_domains
 //   - https://tools.ietf.org/html/draft-grothoff-iesg-special-use-p2p-names-00

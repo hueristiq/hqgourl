@@ -2,15 +2,15 @@
 
 [![go report card](https://goreportcard.com/badge/github.com/hueristiq/hqgourl)](https://goreportcard.com/report/github.com/hueristiq/hqgourl) [![open issues](https://img.shields.io/github/issues-raw/hueristiq/hqgourl.svg?style=flat&color=1E90FF)](https://github.com/hueristiq/hqgourl/issues?q=is:issue+is:open) [![closed issues](https://img.shields.io/github/issues-closed-raw/hueristiq/hqgourl.svg?style=flat&color=1E90FF)](https://github.com/hueristiq/hqgourl/issues?q=is:issue+is:closed) [![license](https://img.shields.io/badge/license-MIT-gray.svg?color=1E90FF)](https://github.com/hueristiq/hqgourl/blob/master/LICENSE) ![maintenance](https://img.shields.io/badge/maintained%3F-yes-1E90FF.svg) [![contribution](https://img.shields.io/badge/contributions-welcome-1E90FF.svg)](https://github.com/hueristiq/hqgourl/blob/master/CONTRIBUTING.md)
 
-A [Go(Golang)](http://golang.org/) package for handling URLs.
+A [Go(Golang)](http://golang.org/) package for extracting, parsing and manipulating URLs.
 
 ## Resources
 
 * [Features](#features)
 * [Usage](#usage)
+    * [URL Extraction](#url-extraction)
     * [Domain Parsing](#domain-parsingn)
     * [URL Parsing](#url-parsing)
-    * [URL Extraction](#url-extraction)
 * [Contributing](#contributing)
 * [Licensing](#licensing)
 * [Credits](#credits)
@@ -19,9 +19,9 @@ A [Go(Golang)](http://golang.org/) package for handling URLs.
 
 ## Features
 
-* **Domain Parsing:** Break down domain names into subdomains, root domains, and TLDs.
-* **URL Parsing:** Extends the standard `net/url` URLs parsing with additional fields.
-* **URL Extraction:** Extracts URLs from text.
+* Flexible URL extraction from text using regular expressions.
+* Domain parsing into subdomains, root domains, and TLDs.
+* Extends the standard `net/url` URLs parsing with additional fields.
 
 ## Installation
 
@@ -30,6 +30,54 @@ go get -v -u github.com/hueristiq/hqgourl
 ```
 
 ## Usage
+
+### URL Extraction
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/hueristiq/hqgourl"
+    "regexp"
+)
+
+func main() {
+    extractor := hqgourl.NewURLExtractor()
+    text := "Check out this website: https://example.com and send an email to info@example.com."
+    
+    regex := extractor.CompileRegex()
+    matches := regex.FindAllString(text, -1)
+    
+    fmt.Println("Found URLs:", matches)
+}
+```
+
+The `URLExtractor` allows customization of the URL extraction process through various options. For instance, you can specify whether to include URL schemes and hosts in the extraction and provide custom regex patterns for these components.
+
+* Extracting URLs with Specific Schemes
+
+    ```go
+    extractor := hqgourl.NewURLExtractor(
+        hqgourl.URLExtractorWithSchemePattern(`(?:https?|ftp)://`),
+    )
+    ```
+
+    This configuration will extract only URLs starting with http, https, or ftp schemes.
+
+* Extracting URLs with Custom Host Patterns
+
+    ```go
+    extractor := hqgourl.NewURLExtractor(
+        hqgourl.URLExtractorWithHostPattern(`(?:www\.)?example\.com`),
+    )
+
+    ```
+
+    This setup will extract URLs that have hosts matching www.example.com or example.com.
+
+> [!NOTE]
+> Since API is centered around [regexp.Regexp](https://golang.org/pkg/regexp/#Regexp), many other methods are available
 
 ### Domain Parsing
 
@@ -45,6 +93,7 @@ func main() {
     dp := hqgourl.NewDomainParser()
 
     parsedDomain := dp.Parse("subdomain.example.com")
+
     fmt.Printf("Subdomain: %s, Root Domain: %s, TLD: %s\n", parsedDomain.Sub, parsedDomain.Root, parsedDomain.TopLevel)
 }
 ```
@@ -65,6 +114,7 @@ func main() {
     parsedURL, err := up.Parse("https://subdomain.example.com:8080/path/file.txt")
     if err != nil {
         fmt.Println("Error parsing URL:", err)
+
         return
     }
 
@@ -80,31 +130,6 @@ Set a default scheme:
 
 ```go
 up := hqgourl.NewURLParser(hqgourl.URLParserWithDefaultScheme("https"))
-```
-
-### URL Extraction
-
-You can create a `URLExtractor` instance with default settings or customize its strictness using the provided options functions:
-
-```go
-// Default extractor with low strictness
-extractor := hqgourl.NewURLExtractor()
-
-// Custom extractor with high strictness
-customExtractor := hqgourl.NewURLExtractor(hqgourl.URLExtractorWithHighStrictness())
-```
-
-Once you have an URLExtractor instance, use the CompileRegex method to compile the regex based on your strictness requirement. Then, use the compiled regex to find URLs within your text:
-
-```go
-regex := extractor.CompileRegex()
-
-text := "Visit our website at https://example.com for more information."
-urls := regex.FindAllString(text, -1)
-
-for _, url := range urls {
-    fmt.Println(url)
-}
 ```
 
 ## Contributing
